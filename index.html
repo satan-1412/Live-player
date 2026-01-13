@@ -16,6 +16,8 @@
             --primary-color: #3ea6ff;
             --accent-color: #a54aff;
             --danger-color: #ff4d4d;
+            --success-color: #2ba640;
+            --warning-color: #ffb142;
             --text-color: #ffffff;
             --text-gray: #aaaaaa;
             --border-color: rgba(255, 255, 255, 0.15);
@@ -41,16 +43,22 @@
         .section-view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
 
-        /* --- 3. 播放器 --- */
+        /* --- 3. 通用组件 --- */
         .section-title { font-size: 20px; font-weight: bold; margin: 20px 0 25px; text-align: center; color: var(--primary-color); }
         .input-group { display: flex; width: 100%; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
         .url-input { flex: 1; background: var(--surface-color); border: none; padding: 15px; color: white; }
         .play-btn { background: var(--primary-color); color: #000; border: none; padding: 0 25px; font-weight: bold; }
+        
+        .upload-area { border: 2px dashed var(--border-color); border-radius: 12px; padding: 40px; text-align: center; background: rgba(255,255,255,0.02); margin-bottom: 20px; cursor: pointer; transition: 0.2s; }
+        .upload-area:hover { border-color: var(--primary-color); background: rgba(62, 166, 255, 0.05); }
+        .btn-upload { background: var(--primary-color); color: #000; padding: 10px 25px; border-radius: 20px; border: none; margin-top: 15px; font-weight: bold; }
+
+        /* --- 4. 播放器 --- */
         .player-wrapper { width: 100%; background: #000; border-radius: 12px; position: relative; padding-top: 56.25%; margin-bottom: 10px; }
         #video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #statusMsg { text-align: center; font-size: 12px; color: #aaa; margin-top: 5px; }
 
-        /* --- 4. 工具栏 --- */
+        /* --- 5. 编辑器 --- */
         .editor-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--surface-color); padding: 10px; border-radius: 8px; flex-wrap: wrap; gap: 10px; }
         .toolbar-group { display: flex; gap: 8px; }
         .tool-btn { background: rgba(255,255,255,0.1); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer; }
@@ -58,17 +66,10 @@
         .tool-btn.primary { background: var(--primary-color); color: #000; font-weight: bold; }
         .tool-btn.danger { background: rgba(255, 77, 77, 0.2); color: var(--danger-color); border: 1px solid var(--danger-color); }
 
-        @media (max-width: 600px) {
-            .tool-btn { padding: 6px 10px; font-size: 12px; }
-            .toolbar-group { gap: 10px; }
-            .editor-toolbar { justify-content: center; }
-        }
-
-        /* --- 5. 视图组件 --- */
         #codeEditor { width: 100%; height: 500px; background: #121212; color: #d4d4d4; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; font-family: monospace; white-space: pre; resize: vertical; }
         
         .channel-item { background: var(--surface-color); border: 1px solid var(--border-color); margin-bottom: 8px; padding: 10px 15px; border-radius: 6px; display: flex; align-items: center; gap: 15px; cursor: move; }
-        .channel-info { flex: 1; overflow: hidden; pointer-events: none; } /* 防止拖拽时选中文字 */
+        .channel-info { flex: 1; overflow: hidden; pointer-events: none; }
         .ch-name { font-weight: bold; font-size: 14px; }
         .ch-url { font-size: 11px; color: var(--text-gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .drag-handle { cursor: grab; color: var(--text-gray); font-size: 18px; padding: 5px; }
@@ -76,12 +77,10 @@
         #gridEditor { display: none; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; padding-bottom: 100px; }
         .grid-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; }
         .grid-card:hover { transform: translateY(-3px); border-color: var(--primary-color); }
-        
         .grid-card.selected { border: 2px solid var(--primary-color); background: rgba(62, 166, 255, 0.1); }
         .check-circle { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,0.5); display: none; z-index: 10; }
         .grid-card.selecting .check-circle { display: block; } 
         .grid-card.selected .check-circle { background: var(--primary-color); border-color: var(--primary-color); }
-
         .card-img-box { width: 100%; height: 0; padding-bottom: 56.25%; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
         .card-img { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #222; }
         .card-placeholder { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #444; font-weight: bold; }
@@ -89,7 +88,35 @@
         .card-name { font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .card-tag { font-size: 10px; color: var(--primary-color); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 
-        /* --- 6. 批量栏 --- */
+        /* --- 6. 新增：在线检测专用样式 --- */
+        .tips-box {
+            background: rgba(255, 177, 66, 0.1); border: 1px solid rgba(255, 177, 66, 0.3); border-radius: 8px;
+            padding: 15px; margin-bottom: 20px; font-size: 13px; color: #ddd; line-height: 1.6;
+        }
+        .tips-title { color: var(--warning-color); font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        
+        .check-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--surface-color); padding: 10px; border-radius: 8px; position: sticky; top: 0; z-index: 50; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .progress-bar { flex: 1; height: 6px; background: #333; border-radius: 3px; margin: 0 15px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: var(--success-color); transition: width 0.3s; }
+        
+        .check-item {
+            background: var(--surface-color); border: 1px solid var(--border-color); margin-bottom: 10px; padding: 12px 15px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: space-between; transition: 0.2s;
+        }
+        .check-info { flex: 1; min-width: 0; margin-right: 15px; }
+        .check-name { font-weight: bold; font-size: 14px; margin-bottom: 3px; }
+        .check-url { font-size: 11px; color: var(--text-gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        .check-status { font-size: 12px; margin-right: 10px; font-weight: bold; display: none; }
+        .check-status.success { display: block; color: var(--success-color); }
+        .check-status.error { display: block; color: var(--danger-color); }
+        .check-status.testing { display: block; color: var(--warning-color); }
+
+        .btn-test { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 5px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .btn-test:hover { background: var(--primary-color); color: #000; }
+        .btn-test:disabled { border-color: #555; color: #555; cursor: not-allowed; }
+
+        /* --- 7. 批量栏 & 弹窗 --- */
         .batch-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; background: #252525; border-top: 1px solid var(--primary-color);
             padding: 15px 20px; display: none; justify-content: space-between; align-items: center; z-index: 300;
@@ -97,22 +124,24 @@
         }
         .batch-info { font-weight: bold; font-size: 14px; margin-right: 15px; }
         .batch-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        @media (max-width: 600px) {
-             .batch-bar { flex-direction: column; gap: 10px; }
-             .batch-actions { justify-content: center; width: 100%; }
-        }
-
-        /* --- 7. 弹窗 --- */
+        
         .modal-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .edit-modal { background: #252525; border-radius: 12px; width: 90%; max-width: 400px; max-height: 85vh; display: flex; flex-direction: column; border: 1px solid var(--border-color); box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
         .edit-header { padding: 15px 20px; border-bottom: 1px solid var(--border-color); font-weight: bold; color: white; display: flex; justify-content: space-between; align-items: center; }
         .edit-body { padding: 20px; overflow-y: auto; }
         .edit-footer { padding: 15px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px; }
+        
         .form-group { margin-bottom: 15px; }
         .form-label { display: block; font-size: 12px; color: var(--text-gray); margin-bottom: 5px; }
         .form-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; color: white; font-size: 14px; }
         .form-input:focus { border-color: var(--primary-color); }
-        .upload-area { border: 2px dashed var(--border-color); border-radius: 12px; padding: 40px; text-align: center; background: rgba(255,255,255,0.02); margin-bottom: 20px; cursor: pointer; }
+        
+        @media (max-width: 600px) {
+             .batch-bar { flex-direction: column; gap: 10px; }
+             .batch-actions { justify-content: center; width: 100%; }
+             .tool-btn { padding: 6px 10px; font-size: 12px; }
+             .editor-toolbar { justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -131,8 +160,8 @@
     <div class="modal-bg" id="confirmModal">
         <div class="edit-modal" style="max-width:300px; text-align:center;">
             <div class="edit-body">
-                <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">M3U/M3U8在线工具箱</div>
-                <div style="color:#ccc; font-size:14px;">文件读取成功！是否进入编辑模式？</div>
+                <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">文件处理</div>
+                <div style="color:#ccc; font-size:14px;" id="confirmText">文件读取成功！是否继续？</div>
             </div>
             <div class="edit-footer" style="justify-content:center;">
                 <button class="tool-btn" onclick="closeConfirm(false)">取消</button>
@@ -178,6 +207,7 @@
         <div class="sidebar-header">工具箱菜单</div>
         <div class="menu-item active" onclick="switchTab('tester', this)"><span>📺 在线链接测试</span></div>
         <div class="menu-item" onclick="switchTab('editor', this)"><span>📝 直播源在线编辑</span></div>
+        <div class="menu-item" onclick="switchTab('checker', this)"><span>📡 直播源在线检测</span></div>
     </aside>
 
     <nav class="navbar">
@@ -198,16 +228,16 @@
 
         <div id="section-editor" class="section-view">
             <div class="section-title">直播源文件编辑</div>
-            <div id="step-upload">
-                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                    <input type="file" id="fileInput" hidden accept=".m3u,.m3u8,.txt">
+            <div id="step-upload-editor">
+                <div class="upload-area" onclick="triggerUpload('editor')">
+                    <input type="file" id="fileInputEditor" hidden accept=".m3u,.m3u8,.txt">
                     <div style="font-size:40px; margin-bottom:10px;">📂</div>
                     <p>点击选择或拖拽文件</p>
                     <button class="btn-upload">选择文件</button>
                 </div>
             </div>
 
-            <div id="step-edit" style="display:none;">
+            <div id="step-edit-ui" style="display:none;">
                 <div class="editor-toolbar">
                     <div class="toolbar-group">
                         <button class="tool-btn active" id="btnModeText" onclick="setMode('text')">📄 文本</button>
@@ -230,20 +260,56 @@
                 </div>
             </div>
         </div>
+
+        <div id="section-checker" class="section-view">
+            <div class="section-title">直播源在线检测</div>
+            
+            <div class="tips-box">
+                <div class="tips-title">⚠️ 温馨提示</div>
+                1. <b>跨域限制 (CORS)</b>：由于浏览器安全策略，很多正常的直播源（如B站、虎牙、某些海外源）会因为服务器未允许跨域而显示“无效”，这是正常现象。<br>
+                2. <b>网络环境</b>：检测结果受您当前网络环境（WiFi/流量/代理）影响，建议通过本地播放器复核。<br>
+                3. <b>Mixed Content</b>：如果本网站是HTTPS，而直播源是HTTP，浏览器可能会自动拦截请求。
+            </div>
+
+            <div id="step-upload-checker">
+                <div class="upload-area" onclick="triggerUpload('checker')">
+                    <input type="file" id="fileInputChecker" hidden accept=".m3u,.m3u8,.txt">
+                    <div style="font-size:40px; margin-bottom:10px;">📡</div>
+                    <p>导入直播源文件进行检测</p>
+                    <button class="btn-upload">选择文件</button>
+                </div>
+            </div>
+
+            <div id="step-check-ui" style="display:none;">
+                <div class="check-toolbar">
+                    <div style="font-size:13px; font-weight:bold;">批量检测</div>
+                    <div class="progress-bar"><div class="progress-fill" id="checkProgress"></div></div>
+                    <button class="tool-btn primary" id="btnCheckAll" onclick="startCheckAll()">▶ 开始全测</button>
+                </div>
+                <div id="checkList"></div>
+                <div style="text-align:center; margin-top:20px;">
+                    <button onclick="resetChecker()" style="background:none; border:none; color:var(--text-gray); cursor:pointer;">🔄 清空并重新导入</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <script>
+        // --- 全局状态 ---
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         const confirmModal = document.getElementById('confirmModal');
-        let fileContentBuffer = '';
-        let currentFileName = 'playlist.m3u';
-        let channelData = []; 
-        let currentEditIndex = -1;
+        
+        let editorData = { buffer: '', name: 'playlist.m3u', channelData: [], headerLines: [] };
+        let checkerData = { channels: [] };
+        
         let isBatchMode = false;
         let selectedIndices = new Set();
         let currentBatchType = '';
+        let currentUploadTarget = ''; // 'editor' or 'checker'
 
+        // --- 导航与文件 ---
         function toggleMenu() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
         function switchTab(id, btn) {
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
@@ -253,6 +319,55 @@
             toggleMenu();
         }
 
+        // 上传触发器
+        function triggerUpload(target) {
+            currentUploadTarget = target;
+            const inputId = target === 'editor' ? 'fileInputEditor' : 'fileInputChecker';
+            document.getElementById(inputId).click();
+        }
+
+        // 监听文件选择
+        document.getElementById('fileInputEditor').addEventListener('change', (e) => handleFileSelect(e, 'editor'));
+        document.getElementById('fileInputChecker').addEventListener('change', (e) => handleFileSelect(e, 'checker'));
+
+        function handleFileSelect(e, target) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                if(target === 'editor') {
+                    editorData.buffer = evt.target.result;
+                    editorData.name = file.name;
+                    document.getElementById('confirmText').textContent = "文件读取成功！是否进入编辑器？";
+                } else {
+                    checkerData.raw = evt.target.result;
+                    document.getElementById('confirmText').textContent = "文件读取成功！是否生成检测列表？";
+                }
+                confirmModal.style.display = 'flex';
+            };
+            reader.readAsText(file);
+        }
+
+        function closeConfirm(isConfirmed) {
+            confirmModal.style.display = 'none';
+            if (!isConfirmed) {
+                if(currentUploadTarget === 'editor') document.getElementById('fileInputEditor').value = '';
+                else document.getElementById('fileInputChecker').value = '';
+                return;
+            }
+
+            if (currentUploadTarget === 'editor') {
+                document.getElementById('codeEditor').value = editorData.buffer;
+                document.getElementById('step-upload-editor').style.display = 'none';
+                document.getElementById('step-edit-ui').style.display = 'block';
+                parseTextToData(); // 编辑器解析
+                setMode('text');
+            } else {
+                initChecker(checkerData.raw); // 检测器初始化
+            }
+        }
+
+        // --- 播放器逻辑 ---
         document.getElementById('playBtn').addEventListener('click', () => {
             const url = document.getElementById('urlInput').value.trim();
             const v = document.getElementById('video');
@@ -260,330 +375,50 @@
             if(!url) return;
             if(Hls.isSupported()) {
                 const hls = new Hls(); hls.loadSource(url); hls.attachMedia(v);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = "✅ 正在播放"; msg.style.color="#4caf50"; });
+                hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = "✅ 正在播放"; msg.style.color="#2ba640"; });
                 hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { msg.textContent = "❌ 加载失败"; msg.style.color="#ff4d4d"; } });
             } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
                 v.src=url; v.play();
             }
         });
 
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            currentFileName = file.name;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                fileContentBuffer = evt.target.result;
-                confirmModal.style.display = 'flex';
-            };
-            reader.readAsText(file);
-        });
-
-        function closeConfirm(isConfirmed) {
-            confirmModal.style.display = 'none';
-            if (isConfirmed) {
-                document.getElementById('codeEditor').value = fileContentBuffer;
-                document.getElementById('step-upload').style.display = 'none';
-                document.getElementById('step-edit').style.display = 'block';
-                parseTextToData();
-                setMode('text');
-            } else {
-                document.getElementById('fileInput').value = '';
-            }
-        }
-
-        function parseTextToData() {
-            const rawText = document.getElementById('codeEditor').value;
+        // ==========================================
+        //      模块 A: 直播源在线检测 (CHECKER)
+        // ==========================================
+        function initChecker(rawText) {
+            document.getElementById('step-upload-checker').style.display = 'none';
+            document.getElementById('step-check-ui').style.display = 'block';
+            
+            // 简单解析，只提取有效频道
             const lines = rawText.split(/\r?\n/);
-            channelData = [];
-            let currentBlock = null;
-
+            checkerData.channels = [];
+            let current = null;
+            
             lines.forEach(line => {
-                const trimLine = line.trim();
-                if (trimLine.startsWith('#EXTINF:')) {
-                    if (currentBlock) channelData.push(currentBlock);
-                    currentBlock = { type: 'unknown', lines: [line], url: '', params: {} };
+                line = line.trim();
+                if(line.startsWith('#EXTINF:')) {
                     const nameMatch = line.match(/,(.+)$/);
-                    currentBlock.params['name'] = nameMatch ? nameMatch[1].trim() : '未命名频道';
-                    const regex = /([a-zA-Z0-9-]+)="([^"]*)"/g;
-                    let match;
-                    while ((match = regex.exec(line)) !== null) {
-                        currentBlock.params[match[1]] = match[2];
-                    }
-                } 
-                else if (currentBlock && currentBlock.type === 'unknown' && isUrl(trimLine)) {
-                    currentBlock.type = 'channel';
-                    currentBlock.url = trimLine;
-                    currentBlock.lines.push(line);
-                    channelData.push(currentBlock);
-                    currentBlock = null; 
-                }
-                else {
-                    if (currentBlock && currentBlock.type === 'unknown') {
-                        currentBlock.lines.push(line);
-                    } else {
-                        if (!currentBlock) currentBlock = { type: 'raw', lines: [line] };
-                        else if (currentBlock.type === 'raw') currentBlock.lines.push(line);
-                        else { channelData.push(currentBlock); currentBlock = { type: 'raw', lines: [line] }; }
-                    }
+                    current = { name: nameMatch ? nameMatch[1].trim() : '未命名频道', url: '' };
+                } else if (line && !line.startsWith('#') && isUrl(line)) {
+                    if(current) { current.url = line; checkerData.channels.push(current); current = null; }
+                    else { checkerData.channels.push({ name: '未知频道', url: line }); }
                 }
             });
-            if (currentBlock) channelData.push(currentBlock);
-            channelData.forEach(item => { if (item.type === 'unknown') item.type = 'raw'; });
+
+            renderCheckList();
         }
 
-        function isUrl(str) {
-            const s = str.toLowerCase();
-            return s.startsWith('http') || s.startsWith('rtmp') || s.startsWith('rtsp') || s.startsWith('udp') || s.startsWith('mms');
-        }
-
-        function syncDataToText() {
-            const text = channelData.map(block => block.lines.join('\n')).join('\n');
-            document.getElementById('codeEditor').value = text;
-        }
-
-        function updateChannelLines(block) {
-            if (block.type !== 'channel') return;
-            let newExtinf = '#EXTINF:-1';
-            for (let key in block.params) {
-                if (key !== 'name') newExtinf += ` ${key}="${block.params[key]}"`;
-            }
-            newExtinf += `,${block.params['name']}`;
-            block.lines = [newExtinf, block.url];
-        }
-
-        function setMode(mode) {
-            if(isBatchMode) toggleBatchMode(false);
-            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-            if(mode==='text') document.getElementById('btnModeText').classList.add('active');
-            if(mode==='visual') document.getElementById('btnModeVisual').classList.add('active');
-            if(mode==='grid') document.getElementById('btnModeGrid').classList.add('active');
-            
-            document.getElementById('codeEditor').style.display = 'none';
-            document.getElementById('visualEditor').style.display = 'none';
-            document.getElementById('gridEditor').style.display = 'none';
-            document.getElementById('btnAddTemplate').style.display = 'none';
-            document.getElementById('btnBatch').style.display = 'none';
-
-            if(mode === 'text') {
-                document.getElementById('codeEditor').style.display = 'block';
-                document.getElementById('btnAddTemplate').style.display = 'flex';
-                syncDataToText();
-            } else if (mode === 'visual') {
-                document.getElementById('visualEditor').style.display = 'block';
-                parseTextToData(); renderVisualList();
-            } else if (mode === 'grid') {
-                document.getElementById('gridEditor').style.display = 'grid';
-                document.getElementById('btnBatch').style.display = 'flex';
-                parseTextToData(); renderGrid();
-            }
-        }
-
-        // --- 核心修复：Sortable.onEnd 逻辑更新数据 ---
-        function renderVisualList() {
-            const list = document.getElementById('visualEditor');
-            list.innerHTML = '';
-            channelData.forEach((item, index) => {
-                if (item.type !== 'channel') return;
-                const li = document.createElement('li');
-                li.className = 'channel-item';
-                li.innerHTML = `<div class="channel-info"><div class="ch-name">${item.params.name}</div><div class="ch-url">${item.url}</div></div><div class="drag-handle">☰</div>`;
-                list.appendChild(li);
-            });
-            
-            if(!list.sortable) list.sortable = Sortable.create(list, { 
-                handle:'.drag-handle', 
-                animation:150, 
-                onEnd: (evt) => {
-                    // 1. 找到所有有效频道的 index
-                    const validIndices = [];
-                    channelData.forEach((item, i) => { if (item.type === 'channel') validIndices.push(i); });
+        function renderCheckList() {
+            const container = document.getElementById('checkList');
+            container.innerHTML = '';
+            checkerData.channels.forEach((ch, index) => {
+                const div = document.createElement('div');
+                div.className = 'check-item';
+                div.id = `check-item-${index}`;
+                div.innerHTML = `
+                    <div class="check-info">
+                        <div class="check-name">${ch.name}</div>
+                        <div class="check-url">${ch.url}</div>
+                    </div>
+                    <div class="check-status" id="status-${index}"></div>
                     
-                    // 2. 提取有效 block
-                    const validBlocks = validIndices.map(i => channelData[i]);
-                    
-                    // 3. 在局部进行移动
-                    const [moved] = validBlocks.splice(evt.oldIndex, 1);
-                    validBlocks.splice(evt.newIndex, 0, moved);
-                    
-                    // 4. 将排序后的 block 填回原数组的对应位置 (保留原有的非频道块不动)
-                    validBlocks.forEach((block, i) => {
-                        channelData[validIndices[i]] = block;
-                    });
-                }
-            });
-        }
-
-        function renderGrid() {
-            const grid = document.getElementById('gridEditor');
-            grid.innerHTML = '';
-            channelData.forEach((item, index) => {
-                if (item.type !== 'channel') return;
-                const card = document.createElement('div');
-                card.className = 'grid-card';
-                if (isBatchMode) {
-                    card.classList.add('selecting');
-                    if (selectedIndices.has(index)) card.classList.add('selected');
-                }
-                card.onclick = () => handleCardClick(index);
-                const logo = item.params['tvg-logo'];
-                const group = item.params['group-title'] || '';
-                const imgHtml = logo ? `<img src="${logo}" class="card-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
-                card.innerHTML = `
-                    <div class="check-circle"></div>
-                    <div class="card-img-box">${imgHtml}<div class="card-placeholder" ${logo?'style="display:none"':''}>${item.params.name[0]}</div></div>
-                    <div class="card-info"><div class="card-tag">${group}</div><div class="card-name">${item.params.name}</div></div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function handleCardClick(index) {
-            if (isBatchMode) {
-                if (selectedIndices.has(index)) selectedIndices.delete(index);
-                else selectedIndices.add(index);
-                renderGrid();
-                updateBatchUI();
-            } else {
-                openEditModal(index);
-            }
-        }
-
-        function toggleSelectAll() {
-            const validIndices = [];
-            channelData.forEach((item, idx) => { if(item.type==='channel') validIndices.push(idx); });
-            const allSelected = validIndices.every(idx => selectedIndices.has(idx));
-            if (allSelected) selectedIndices.clear();
-            else validIndices.forEach(idx => selectedIndices.add(idx));
-            renderGrid();
-            updateBatchUI();
-        }
-
-        function updateBatchUI() {
-            document.getElementById('batchCount').textContent = `已选 ${selectedIndices.size} 个`;
-            const btnAll = document.getElementById('btnSelectAll');
-            const validCount = channelData.filter(i => i.type==='channel').length;
-            if (selectedIndices.size === validCount && validCount > 0) btnAll.textContent = "🔁 全取消";
-            else btnAll.textContent = "🔁 全选";
-        }
-
-        function toggleBatchMode(forceState) {
-            isBatchMode = forceState !== undefined ? forceState : !isBatchMode;
-            selectedIndices.clear();
-            const btn = document.getElementById('btnBatch');
-            const bar = document.getElementById('batchBar');
-            if (isBatchMode) {
-                btn.classList.add('active');
-                btn.textContent = '❌ 退出选择';
-                bar.style.display = 'flex';
-                updateBatchUI();
-            } else {
-                btn.classList.remove('active');
-                btn.textContent = '✅ 批量选择';
-                bar.style.display = 'none';
-            }
-            renderGrid();
-        }
-
-        function openBatchEdit(type) {
-            if (selectedIndices.size === 0) return alert('请先选择频道！');
-            currentBatchType = type;
-            document.getElementById('batchLabel').textContent = type === 'group' ? '请输入新的分组名称' : '请输入新的Logo链接';
-            document.getElementById('batchInput').value = '';
-            document.getElementById('batchInputModal').style.display = 'flex';
-        }
-
-        function applyBatchEdit() {
-            const val = document.getElementById('batchInput').value.trim();
-            const key = currentBatchType === 'group' ? 'group-title' : 'tvg-logo';
-            selectedIndices.forEach(idx => {
-                const item = channelData[idx];
-                if(val) item.params[key] = val;
-                else delete item.params[key];
-                updateChannelLines(item);
-            });
-            document.getElementById('batchInputModal').style.display = 'none';
-            toggleBatchMode(false);
-        }
-
-        function batchDelete() {
-            if (selectedIndices.size === 0) return alert('未选择！');
-            if (!confirm(`确定删除选中的 ${selectedIndices.size} 个频道吗？`)) return;
-            const sortedIndices = Array.from(selectedIndices).sort((a,b) => b-a);
-            sortedIndices.forEach(idx => channelData.splice(idx, 1));
-            toggleBatchMode(false);
-        }
-
-        const editModal = document.getElementById('editModal');
-        const dynamicForm = document.getElementById('dynamicForm');
-
-        function openEditModal(index) {
-            currentEditIndex = index;
-            const item = channelData[index];
-            dynamicForm.innerHTML = ''; 
-            createInput('频道名称 (name)', 'name', item.params['name']);
-            createInput('直播链接 (URL)', 'url', item.url);
-            for (let key in item.params) {
-                if (key !== 'name') createInput(`属性: ${key}`, key, item.params[key]);
-            }
-            if (!item.params['tvg-logo']) createInput('台标链接 (tvg-logo)', 'tvg-logo', '');
-            if (!item.params['group-title']) createInput('分组名称 (group-title)', 'group-title', '');
-            editModal.style.display = 'flex';
-        }
-
-        function createInput(label, key, value) {
-            const div = document.createElement('div');
-            div.className = 'form-group';
-            div.innerHTML = `<label class="form-label">${label}</label><input type="text" class="form-input" data-key="${key}" value="${value}">`;
-            dynamicForm.appendChild(div);
-        }
-
-        function addNewProperty() {
-            const key = prompt("请输入属性名 (例如 tvg-id):");
-            if (key) createInput(`属性: ${key}`, key, '');
-        }
-
-        function saveChannelData() {
-            const inputs = dynamicForm.querySelectorAll('input');
-            const item = channelData[currentEditIndex];
-            inputs.forEach(input => {
-                const key = input.dataset.key;
-                const val = input.value.trim();
-                if (key === 'url') item.url = val;
-                else {
-                    if (val) item.params[key] = val;
-                    else delete item.params[key];
-                }
-            });
-            updateChannelLines(item);
-            closeEditModal();
-            renderGrid();
-        }
-
-        function closeEditModal() { editModal.style.display = 'none'; }
-
-        function insertTemplate() {
-            const tpl = `\n#EXTINF:-1 tvg-logo="" group-title="新分组", 新频道\nhttp://url\n`;
-            const editor = document.getElementById('codeEditor');
-            const start = editor.selectionStart;
-            editor.value = editor.value.slice(0, start) + tpl + editor.value.slice(editor.selectionEnd);
-        }
-
-        function saveAndDownload() {
-            syncDataToText();
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([document.getElementById('codeEditor').value], {type: "text/plain"}));
-            a.download = "Edited_" + currentFileName;
-            a.click();
-        }
-
-        function resetEditor() {
-            if(confirm('放弃修改？')) {
-                document.getElementById('step-edit').style.display = 'none';
-                document.getElementById('step-upload').style.display = 'block';
-                document.getElementById('fileInput').value = '';
-            }
-        }
-    </script>
-</body>
-</html>
