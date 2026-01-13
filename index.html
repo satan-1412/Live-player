@@ -41,13 +41,23 @@
         .menu-btn { background: none; border: none; color: white; font-size: 24px; padding: 5px; margin-right: 15px; }
         .app-title { font-size: 18px; font-weight: 600; background: linear-gradient(90deg, var(--primary-color), #a54aff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* --- 侧边栏 --- */
+        /* --- 侧边栏 (修复位置偏下问题) --- */
         .sidebar {
             position: fixed; top: 0; left: 0; height: 100%; width: 280px;
             background-color: var(--surface-color); transform: translateX(-100%); transition: 0.3s;
-            z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.5); padding-top: 60px;
+            z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.5); 
+            /* 删除 padding-top，让 header 顶上去 */
+            display: flex; flex-direction: column;
         }
         .sidebar.active { transform: translateX(0); }
+        
+        .sidebar-header {
+            height: 60px; display: flex; align-items: center; padding-left: 20px; 
+            border-bottom: 1px solid var(--border-color); font-weight: bold; color: var(--text-gray);
+            flex-shrink: 0; /* 防止被挤压 */
+        }
+        
+        .menu-category { padding: 15px 20px 5px; color: var(--text-gray); font-size: 12px; font-weight: bold; text-transform: uppercase; }
         .menu-item { display: flex; align-items: center; padding: 12px 20px; color: white; transition: 0.2s; border-left: 3px solid transparent; cursor: pointer; }
         .menu-item.active { border-left-color: var(--primary-color); color: var(--primary-color); background: rgba(255,255,255,0.05); }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 150; backdrop-filter: blur(2px); }
@@ -66,6 +76,7 @@
         .play-btn { background: var(--primary-color); color: #000; border: none; padding: 0 25px; font-weight: bold; }
         .player-wrapper { width: 100%; background: #000; border-radius: 12px; position: relative; padding-top: 56.25%; margin-bottom: 10px; }
         #video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #statusMsg { text-align: center; font-size: 12px; color: #aaa; margin-top: 5px; }
 
         /* --- 编辑页 --- */
         .upload-area {
@@ -74,13 +85,12 @@
         }
         .btn-upload { background: var(--primary-color); color: #000; padding: 10px 25px; border-radius: 20px; border: none; margin-top: 15px; font-weight: bold; }
 
-        /* 工具栏适配 */
+        /* 工具栏 */
         .editor-toolbar {
             display: flex; justify-content: space-between; align-items: center; 
             margin-bottom: 15px; background: var(--surface-color); padding: 10px; border-radius: 8px; flex-wrap: wrap; gap: 10px;
         }
-        .toolbar-group { display: flex; gap: 8px; } /* 默认间距 */
-        
+        .toolbar-group { display: flex; gap: 8px; }
         .tool-btn { 
             background: rgba(255,255,255,0.1); color: white; border: none; 
             padding: 8px 12px; border-radius: 6px; font-size: 13px; 
@@ -89,16 +99,15 @@
         .tool-btn.active { background: var(--primary-color); color: #000; }
         .tool-btn.primary { background: var(--primary-color); color: #000; font-weight: bold; }
         
-        /* 移动端特殊适配：按钮缩小，间距拉大 */
         @media (max-width: 600px) {
-            .tool-btn { padding: 6px 10px; font-size: 12px; } /* 缩小按钮 */
-            .toolbar-group { gap: 15px; } /* 拉大按钮组之间的距离 */
-            .editor-toolbar { justify-content: center; } /* 居中对齐 */
+            .tool-btn { padding: 6px 10px; font-size: 12px; }
+            .toolbar-group { gap: 15px; }
+            .editor-toolbar { justify-content: center; }
         }
 
         #codeEditor { width: 100%; height: 500px; background: #121212; color: #d4d4d4; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; font-family: monospace; white-space: pre; }
         
-        /* 列表可视化 */
+        /* 列表模式 */
         .channel-item {
             background: var(--surface-color); border: 1px solid var(--border-color); margin-bottom: 8px;
             padding: 10px 15px; border-radius: 6px; display: flex; align-items: center; gap: 15px;
@@ -108,40 +117,111 @@
         .ch-name { font-weight: bold; font-size: 14px; }
         .ch-url { font-size: 11px; color: var(--text-gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* 底部重置按钮样式优化 */
+        /* --- 新增：资料模式 (Grid View) --- */
+        #gridEditor {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 15px;
+            padding-bottom: 50px;
+        }
+        .grid-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+        .grid-card:hover { transform: translateY(-3px); border-color: var(--primary-color); }
+        
+        .card-img-box {
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 */
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-img {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            object-fit: contain; /* 保持Logo比例 */
+            background-color: #222;
+        }
+        .card-placeholder {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #444; font-weight: bold;
+        }
+        .card-info { padding: 10px; }
+        .card-name { font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-tag { font-size: 10px; color: var(--primary-color); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        /* --- 资料编辑弹窗 (Dynamic Modal) --- */
+        .modal-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 1000; display: none;
+            justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        }
+        .edit-modal {
+            background: #252525; border-radius: 12px; width: 90%; max-width: 400px;
+            max-height: 80vh; overflow-y: auto; border: 1px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column;
+        }
+        .edit-header {
+            padding: 15px 20px; border-bottom: 1px solid var(--border-color);
+            font-weight: bold; font-size: 16px; color: white;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .edit-body { padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 12px; color: var(--text-gray); margin-bottom: 5px; }
+        .form-input {
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color);
+            padding: 10px; border-radius: 6px; color: white; font-size: 14px;
+        }
+        .form-input:focus { border-color: var(--primary-color); }
+        
+        .edit-footer {
+            padding: 15px 20px; border-top: 1px solid var(--border-color);
+            display: flex; justify-content: flex-end; gap: 10px;
+        }
+
         .reset-btn {
             background: transparent; color: var(--danger-color); border: 1px solid var(--danger-color);
             padding: 8px 20px; border-radius: 6px; font-size: 12px; margin-top: 15px; display: inline-block;
         }
 
-        /* --- 自定义弹窗 (Modal) --- */
-        .custom-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 999; display: none;
-            justify-content: center; align-items: center; backdrop-filter: blur(5px);
-        }
-        .modal-content {
-            background: #252525; padding: 25px; border-radius: 12px; width: 85%; max-width: 320px;
-            text-align: center; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .modal-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; color: white; }
-        .modal-text { font-size: 14px; color: #ccc; margin-bottom: 20px; }
-        .modal-actions { display: flex; gap: 10px; justify-content: center; }
-        .modal-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; font-size: 13px; }
-        .btn-cancel { background: rgba(255,255,255,0.1); color: white; }
-        .btn-confirm { background: var(--primary-color); color: #000; }
-
     </style>
 </head>
 <body>
 
-    <div class="custom-modal" id="customConfirm">
-        <div class="modal-content">
-            <div class="modal-title">M3U/M3U8在线工具箱</div>
-            <div class="modal-text">文件读取成功！是否进入编辑模式？</div>
-            <div class="modal-actions">
-                <button class="modal-btn btn-cancel" onclick="closeModal(false)">取消</button>
-                <button class="modal-btn btn-confirm" onclick="closeModal(true)">确定</button>
+    <div class="modal-bg" id="confirmModal">
+        <div class="edit-modal" style="max-width:300px; text-align:center;">
+            <div class="edit-body">
+                <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">M3U/M3U8在线工具箱</div>
+                <div style="color:#ccc; font-size:14px;">文件读取成功！是否进入编辑模式？</div>
+            </div>
+            <div class="edit-footer" style="justify-content:center;">
+                <button class="tool-btn" onclick="closeConfirm(false)">取消</button>
+                <button class="tool-btn primary" onclick="closeConfirm(true)">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="editModal">
+        <div class="edit-modal">
+            <div class="edit-header">
+                <span>编辑频道资料</span>
+                <span onclick="closeEditModal()" style="cursor:pointer; font-size:20px;">&times;</span>
+            </div>
+            <div class="edit-body" id="dynamicForm">
+                </div>
+            <div class="edit-footer">
+                <button class="tool-btn" onclick="closeEditModal()">取消</button>
+                <button class="tool-btn primary" onclick="saveChannelData()">保存修改</button>
             </div>
         </div>
     </div>
@@ -149,8 +229,8 @@
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
     <aside class="sidebar" id="sidebar">
-        <div style="height:60px; display:flex; align-items:center; padding-left:20px; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:bold; color:#aaa;">工具箱菜单</div>
-        <div style="padding:15px 20px 5px; color:#aaa; font-size:12px; font-weight:bold;">常用功能</div>
+        <div class="sidebar-header">工具箱菜单</div>
+        <div class="menu-category">常用功能</div>
         <div class="menu-item active" onclick="switchTab('tester', this)"><span>📺 在线链接测试</span></div>
         <div class="menu-item" onclick="switchTab('editor', this)"><span>📝 直播源在线编辑</span></div>
     </aside>
@@ -170,7 +250,7 @@
             <div class="player-wrapper">
                 <video id="video" controls></video>
             </div>
-            <div style="text-align:center; font-size:12px; color:#aaa;" id="statusMsg">准备就绪</div>
+            <div id="statusMsg">准备就绪</div>
         </div>
 
         <div id="section-editor" class="section-view">
@@ -188,17 +268,19 @@
             <div id="step-edit" style="display:none;">
                 <div class="editor-toolbar">
                     <div class="toolbar-group">
-                        <button class="tool-btn active" id="btnModeText" onclick="setMode('text')">📄 文本模式</button>
-                        <button class="tool-btn" id="btnModeVisual" onclick="setMode('visual')">☰ 列表模式</button>
+                        <button class="tool-btn active" id="btnModeText" onclick="setMode('text')">📄 文本</button>
+                        <button class="tool-btn" id="btnModeVisual" onclick="setMode('visual')">☰ 列表</button>
+                        <button class="tool-btn" id="btnModeGrid" onclick="setMode('grid')">▦ 资料</button>
                     </div>
                     <div class="toolbar-group">
-                        <button class="tool-btn" id="btnAddTemplate" onclick="insertTemplate()">➕ 添加频道</button>
-                        <button class="tool-btn primary" onclick="saveAndDownload()">💾 保存下载</button>
+                        <button class="tool-btn" id="btnAddTemplate" onclick="insertTemplate()">➕ 添加</button>
+                        <button class="tool-btn primary" onclick="saveAndDownload()">💾 保存</button>
                     </div>
                 </div>
 
                 <textarea id="codeEditor" spellcheck="false" placeholder="#EXTM3U..."></textarea>
                 <ul id="visualEditor" style="display:none; list-style:none;"></ul>
+                <div id="gridEditor" style="display:none;"></div>
                 
                 <div style="text-align:center;">
                     <button onclick="resetEditor()" class="reset-btn">❌ 放弃修改并重新上传</button>
@@ -208,12 +290,14 @@
     </main>
 
     <script>
-        // --- 逻辑部分 ---
+        // --- 1. 基础 UI 逻辑 ---
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
-        const customModal = document.getElementById('customConfirm');
-        let fileContentBuffer = ''; // 暂存文件内容
+        const confirmModal = document.getElementById('confirmModal');
+        let fileContentBuffer = ''; 
         let currentFileName = 'playlist.m3u';
+        let channelData = []; // 存储所有频道对象的数组
+        let currentEditIndex = -1; // 当前正在编辑的频道索引
 
         function toggleMenu() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
         function switchTab(id, btn) {
@@ -224,21 +308,38 @@
             toggleMenu();
         }
 
-        // 播放器
+        // --- 2. 播放器修复逻辑 ---
         document.getElementById('playBtn').addEventListener('click', () => {
             const url = document.getElementById('urlInput').value.trim();
             const v = document.getElementById('video');
             const msg = document.getElementById('statusMsg');
+            
+            if (!url) return;
+
             if(Hls.isSupported()) {
-                const hls = new Hls(); hls.loadSource(url); hls.attachMedia(v);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = "✅ 正在播放"; });
-                hls.on(Hls.Events.ERROR, () => msg.textContent = "❌ 加载失败");
+                const hls = new Hls(); 
+                hls.loadSource(url); 
+                hls.attachMedia(v);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => { 
+                    v.play(); 
+                    msg.textContent = "✅ 正在播放"; 
+                    msg.style.color = "#4caf50";
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => { 
+                    // 修复：只在致命错误时显示失败，普通的buffer stall不报错
+                    if (data.fatal) {
+                        msg.textContent = "❌ 加载失败 (Fatal Error)";
+                        msg.style.color = "#ff4d4d";
+                    }
+                });
             } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
-                v.src = url; v.play();
+                v.src = url; 
+                v.play();
+                msg.textContent = "✅ 正在播放 (原生)";
             }
         });
 
-        // 文件上传与自定义弹窗逻辑
+        // --- 3. 文件处理 ---
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(!file) return;
@@ -246,82 +347,253 @@
             const reader = new FileReader();
             reader.onload = function(evt) {
                 fileContentBuffer = evt.target.result;
-                // 显示自定义弹窗
-                customModal.style.display = 'flex';
+                confirmModal.style.display = 'flex';
             };
             reader.readAsText(file);
         });
 
-        // 处理弹窗点击
-        function closeModal(isConfirmed) {
-            customModal.style.display = 'none';
+        function closeConfirm(isConfirmed) {
+            confirmModal.style.display = 'none';
             if (isConfirmed) {
                 document.getElementById('codeEditor').value = fileContentBuffer;
                 document.getElementById('step-upload').style.display = 'none';
                 document.getElementById('step-edit').style.display = 'block';
+                // 解析数据
+                parseTextToData();
                 setMode('text');
             } else {
-                document.getElementById('fileInput').value = ''; // 清空选择
+                document.getElementById('fileInput').value = '';
             }
         }
 
-        // 编辑器逻辑
+        // --- 4. 核心解析与模式切换 ---
         const visualEditor = document.getElementById('visualEditor');
         const codeEditor = document.getElementById('codeEditor');
-        let sortable = null;
+        const gridEditor = document.getElementById('gridEditor');
 
         function setMode(mode) {
-            document.getElementById('btnModeText').className = mode==='text' ? 'tool-btn active' : 'tool-btn';
-            document.getElementById('btnModeVisual').className = mode==='visual' ? 'tool-btn active' : 'tool-btn';
+            // 按钮状态更新
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            if(mode==='text') document.getElementById('btnModeText').classList.add('active');
+            if(mode==='visual') document.getElementById('btnModeVisual').classList.add('active');
+            if(mode==='grid') document.getElementById('btnModeGrid').classList.add('active');
             
+            // 隐藏所有
+            codeEditor.style.display = 'none';
+            visualEditor.style.display = 'none';
+            gridEditor.style.display = 'none';
+            document.getElementById('btnAddTemplate').style.display = 'none';
+
+            // 切换逻辑
             if(mode === 'text') {
                 codeEditor.style.display = 'block';
-                visualEditor.style.display = 'none';
                 document.getElementById('btnAddTemplate').style.display = 'flex';
-                if(visualEditor.children.length > 0) syncVisualToText();
-            } else {
-                codeEditor.style.display = 'none';
+                // 从数据同步回文本
+                syncDataToText();
+            } else if (mode === 'visual') {
                 visualEditor.style.display = 'block';
-                document.getElementById('btnAddTemplate').style.display = 'none';
-                parseTextToVisual();
-                if(!sortable) sortable = Sortable.create(visualEditor, { handle: '.drag-handle', animation: 150 });
+                // 每次切回列表都重新解析文本（确保文本模式修改生效）
+                if (codeEditor.style.display !== 'none') parseTextToData(); 
+                else syncDataToText(); // 如果从Grid切过来，先把Grid数据写回Text再解析显示List？不，直接用Data渲染
+                
+                renderVisualList();
+            } else if (mode === 'grid') {
+                gridEditor.style.display = 'grid'; // Grid 布局
+                parseTextToData(); // 确保数据最新
+                renderGrid();
             }
         }
 
-        function parseTextToVisual() {
-            visualEditor.innerHTML = '';
+        // --- 5. 数据解析 (Text -> Object Array) ---
+        function parseTextToData() {
             const lines = codeEditor.value.split('\n');
+            channelData = [];
             let current = null;
+
             lines.forEach(line => {
                 line = line.trim();
                 if(line.startsWith('#EXTINF:')) {
-                    if(current) addItemToDom(current);
-                    current = { header: line, url: '' };
-                    const name = line.match(/,(.+)$/);
-                    current.name = name ? name[1] : '未命名频道';
+                    if(current) channelData.push(current);
+                    
+                    // 初始化新对象
+                    current = { 
+                        rawHeader: line, 
+                        url: '', 
+                        params: {} 
+                    };
+
+                    // 解析 EXTINF 参数
+                    // 1. 提取名字 (最后一个逗号后面)
+                    const nameMatch = line.match(/,(.+)$/);
+                    current.params['name'] = nameMatch ? nameMatch[1].trim() : '未命名频道';
+
+                    // 2. 提取 key="value" 格式参数
+                    const regex = /([a-zA-Z0-9-]+)="([^"]*)"/g;
+                    let match;
+                    while ((match = regex.exec(line)) !== null) {
+                        current.params[match[1]] = match[2];
+                    }
                 } else if (!line.startsWith('#') && line.length > 0) {
-                    if(current) { current.url = line; addItemToDom(current); current = null; }
+                    if(current) { 
+                        current.url = line; 
+                        channelData.push(current); 
+                        current = null; 
+                    }
                 }
             });
         }
 
-        function addItemToDom(item) {
-            const li = document.createElement('li');
-            li.className = 'channel-item';
-            li.dataset.header = item.header;
-            li.dataset.url = item.url;
-            li.innerHTML = `<div class="channel-info"><div class="ch-name">${item.name}</div><div class="ch-url">${item.url}</div></div><div class="drag-handle">☰</div>`;
-            visualEditor.appendChild(li);
-        }
-
-        function syncVisualToText() {
+        // --- 6. 数据同步 (Object Array -> Text) ---
+        function syncDataToText() {
             let res = "#EXTM3U\n";
-            visualEditor.querySelectorAll('li').forEach(li => {
-                res += li.dataset.header + "\n" + li.dataset.url + "\n";
+            channelData.forEach(ch => {
+                // 重建 Header
+                // 必须保留 duration (-1)
+                let newLine = '#EXTINF:-1';
+                
+                // 遍历 params 拼装
+                for (let key in ch.params) {
+                    if (key !== 'name') { // 名字在最后，不参与键值对拼装
+                        newLine += ` ${key}="${ch.params[key]}"`;
+                    }
+                }
+                
+                // 加名字
+                newLine += `,${ch.params['name']}`;
+                
+                res += newLine + "\n" + ch.url + "\n";
             });
             codeEditor.value = res;
         }
 
+        // --- 7. 渲染列表模式 ---
+        function renderVisualList() {
+            visualEditor.innerHTML = '';
+            channelData.forEach((ch, index) => {
+                const li = document.createElement('li');
+                li.className = 'channel-item';
+                li.innerHTML = `
+                    <div class="channel-info">
+                        <div class="ch-name">${ch.params.name}</div>
+                        <div class="ch-url">${ch.url}</div>
+                    </div>
+                    <div class="drag-handle">☰</div>
+                `;
+                visualEditor.appendChild(li);
+            });
+            // 初始化拖拽
+            if(!visualEditor.sortable) {
+                visualEditor.sortable = Sortable.create(visualEditor, { 
+                    handle: '.drag-handle', 
+                    animation: 150,
+                    onEnd: (evt) => {
+                        // 拖拽后同步数据顺序
+                        const item = channelData.splice(evt.oldIndex, 1)[0];
+                        channelData.splice(evt.newIndex, 0, item);
+                    }
+                });
+            }
+        }
+
+        // --- 8. 渲染资料模式 (Grid + Dynamic Modal) ---
+        function renderGrid() {
+            gridEditor.innerHTML = '';
+            channelData.forEach((ch, index) => {
+                const card = document.createElement('div');
+                card.className = 'grid-card';
+                card.onclick = () => openEditModal(index); // 点击打开弹窗
+
+                const logoUrl = ch.params['tvg-logo'];
+                const groupTitle = ch.params['group-title'] || '';
+                
+                // 卡片内容
+                let imgHtml = logoUrl 
+                    ? `<img src="${logoUrl}" class="card-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                       <div class="card-placeholder" style="display:none">${ch.params.name[0]}</div>`
+                    : `<div class="card-placeholder">${ch.params.name[0]}</div>`;
+
+                card.innerHTML = `
+                    <div class="card-img-box">${imgHtml}</div>
+                    <div class="card-info">
+                        <div class="card-tag">${groupTitle}</div>
+                        <div class="card-name">${ch.params.name}</div>
+                    </div>
+                `;
+                gridEditor.appendChild(card);
+            });
+        }
+
+        // --- 9. 动态弹窗逻辑 ---
+        const editModal = document.getElementById('editModal');
+        const dynamicForm = document.getElementById('dynamicForm');
+
+        function openEditModal(index) {
+            currentEditIndex = index;
+            const ch = channelData[index];
+            dynamicForm.innerHTML = ''; // 清空
+
+            // 必显字段
+            const standardKeys = ['name', 'group-title', 'tvg-logo', 'url'];
+            
+            // 1. 先显示标准字段 (如果不存在也创建空框)
+            // Name
+            createInput('频道名称 (name)', 'name', ch.params['name']);
+            // Group
+            createInput('分组名称 (group-title)', 'group-title', ch.params['group-title'] || '');
+            // Logo
+            createInput('台标链接 (tvg-logo)', 'tvg-logo', ch.params['tvg-logo'] || '');
+            
+            // 2. 显示其它检测到的字段 (Flexible)
+            for (let key in ch.params) {
+                if (!standardKeys.includes(key) && key !== 'name') {
+                    createInput(`其他属性 (${key})`, key, ch.params[key]);
+                }
+            }
+
+            // 3. URL (特殊处理，不在params里)
+            createInput('直播链接 (URL)', 'url', ch.url);
+
+            editModal.parentNode.style.display = 'flex';
+        }
+
+        function createInput(label, key, value) {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `
+                <label class="form-label">${label}</label>
+                <input type="text" class="form-input" data-key="${key}" value="${value}">
+            `;
+            dynamicForm.appendChild(div);
+        }
+
+        function closeEditModal() {
+            editModal.parentNode.style.display = 'none';
+        }
+
+        function saveChannelData() {
+            const inputs = dynamicForm.querySelectorAll('input');
+            const ch = channelData[currentEditIndex];
+            
+            inputs.forEach(input => {
+                const key = input.dataset.key;
+                const val = input.value.trim();
+                
+                if (key === 'url') {
+                    ch.url = val;
+                } else {
+                    if (val) {
+                        ch.params[key] = val;
+                    } else {
+                        delete ch.params[key]; // 如果清空了值，就删除该属性
+                    }
+                }
+            });
+
+            closeEditModal();
+            renderGrid(); // 刷新网格视图
+        }
+
+        // --- 10. 通用工具 ---
         function insertTemplate() {
             const tpl = `\n#EXTINF:-1 tvg-logo="" group-title="新分组", 新频道\nhttp://url`;
             const start = codeEditor.selectionStart;
@@ -329,7 +601,7 @@
         }
 
         function saveAndDownload() {
-            if(visualEditor.style.display !== 'none') syncVisualToText();
+            syncDataToText(); // 确保所有模式的修改都写入文本
             const a = document.createElement("a");
             a.href = URL.createObjectURL(new Blob([codeEditor.value], {type: "text/plain"}));
             a.download = "Edited_" + currentFileName;
