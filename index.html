@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>M3U/M3U8在线工具箱</title>
+    <title>M3U/M3U8 Web Toolbox</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
@@ -27,9 +27,23 @@
 
         /* --- 2. 布局 --- */
         .navbar { display: flex; align-items: center; height: 60px; padding: 0 20px; background: rgba(15,15,15,0.95); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
-        .menu-btn { background: none; border: none; color: white; font-size: 24px; padding: 5px; margin-right: 15px; }
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; padding: 5px; margin-right: 15px; cursor: pointer; }
         .app-title { font-size: 18px; font-weight: 600; background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* 语言切换器 */
+        .lang-container { margin-left: auto; position: relative; }
+        .lang-btn { background: none; border: 1px solid var(--border-color); color: white; padding: 5px 10px; border-radius: 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .lang-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--primary-color); }
+        .lang-menu { 
+            position: absolute; top: 100%; right: 0; margin-top: 10px; background: var(--surface-color); border: 1px solid var(--border-color); 
+            border-radius: 8px; width: 160px; display: none; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden;
+        }
+        .lang-menu.active { display: flex; }
+        .lang-item { padding: 10px 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #ddd; transition: 0.2s; }
+        .lang-item:hover { background: var(--surface-active); color: white; }
+        .lang-flag { font-size: 16px; }
 
+        /* 侧边栏 */
         .sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: var(--surface-color); transform: translateX(-100%); transition: 0.3s; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
         .sidebar.active { transform: translateX(0); }
         .sidebar-header { height: 60px; display: flex; align-items: center; padding-left: 20px; border-bottom: 1px solid var(--border-color); font-weight: bold; color: var(--text-gray); flex-shrink: 0; }
@@ -49,7 +63,7 @@
         
         .input-group { display: flex; width: 100%; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
         .url-input { flex: 1; background: var(--surface-color); border: none; padding: 15px; color: white; }
-        .play-btn { background: var(--primary-color); color: #000; border: none; padding: 0 25px; font-weight: bold; }
+        .play-btn { background: var(--primary-color); color: #000; border: none; padding: 0 25px; font-weight: bold; white-space: nowrap;}
         
         .upload-area { border: 2px dashed var(--border-color); border-radius: 12px; padding: 40px; text-align: center; background: rgba(255,255,255,0.02); margin-bottom: 20px; cursor: pointer; transition: 0.2s; }
         .upload-area:hover { border-color: var(--primary-color); background: rgba(62, 166, 255, 0.05); }
@@ -115,7 +129,7 @@
         .check-status.warning { display: block; color: var(--warning-color); }
         .check-status.testing { display: block; color: var(--primary-color); }
 
-        .btn-test { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 5px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .btn-test { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 5px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .btn-test:hover { background: var(--primary-color); color: #000; }
         .btn-test:disabled { border-color: #555; color: #555; cursor: not-allowed; }
 
@@ -161,25 +175,25 @@
 <body>
 
     <div class="batch-bar" id="batchBar">
-        <div class="batch-info" id="batchCount">已选 0 个</div>
+        <div class="batch-info" id="batchCount" data-i18n="batch_selected">已选 0 个</div>
         <div class="batch-actions">
-            <button class="tool-btn" id="btnSelectAll" onclick="toggleSelectAll()">🔁 全选</button>
-            <button class="tool-btn" onclick="openBatchEdit('group')">改分组</button>
-            <button class="tool-btn" onclick="openBatchEdit('logo')">改Logo</button>
-            <button class="tool-btn danger" onclick="batchDelete()">删除</button>
-            <button class="tool-btn" onclick="toggleBatchMode(false)">退出</button>
+            <button class="tool-btn" id="btnSelectAll" onclick="toggleSelectAll()" data-i18n="btn_select_all">🔁 全选</button>
+            <button class="tool-btn" onclick="openBatchEdit('group')" data-i18n="btn_edit_group">改分组</button>
+            <button class="tool-btn" onclick="openBatchEdit('logo')" data-i18n="btn_edit_logo">改Logo</button>
+            <button class="tool-btn danger" onclick="batchDelete()" data-i18n="btn_delete">删除</button>
+            <button class="tool-btn" onclick="toggleBatchMode(false)" data-i18n="btn_exit">退出</button>
         </div>
     </div>
 
     <div class="modal-bg" id="confirmModal">
         <div class="edit-modal" style="max-width:300px; text-align:center;">
             <div class="edit-body">
-                <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">文件处理</div>
-                <div style="color:#ccc; font-size:14px;" id="confirmText">文件读取成功！是否继续？</div>
+                <div style="font-size:16px; font-weight:bold; margin-bottom:10px;" data-i18n="modal_file_title">文件处理</div>
+                <div style="color:#ccc; font-size:14px;" id="confirmText" data-i18n="modal_file_desc">文件读取成功！是否继续？</div>
             </div>
             <div class="edit-footer" style="justify-content:center;">
-                <button class="tool-btn" onclick="closeConfirm(false)">取消</button>
-                <button class="tool-btn primary" onclick="closeConfirm(true)">确定</button>
+                <button class="tool-btn" onclick="closeConfirm(false)" data-i18n="btn_cancel">取消</button>
+                <button class="tool-btn primary" onclick="closeConfirm(true)" data-i18n="btn_confirm">确定</button>
             </div>
         </div>
     </div>
@@ -187,30 +201,30 @@
     <div class="modal-bg" id="editModal">
         <div class="edit-modal">
             <div class="edit-header">
-                <span id="editModalTitle">编辑资料</span>
+                <span id="editModalTitle" data-i18n="modal_edit_title">编辑资料</span>
                 <span onclick="closeEditModal()" style="cursor:pointer; font-size:20px;">&times;</span>
             </div>
             <div class="edit-body" id="dynamicForm"></div>
             <div class="edit-footer">
-                <button class="tool-btn" onclick="addNewProperty()" style="margin-right:auto; opacity:0.7;">+ 属性</button>
-                <button class="tool-btn" onclick="closeEditModal()">取消</button>
-                <button class="tool-btn primary" onclick="saveChannelData()">确认</button>
+                <button class="tool-btn" onclick="addNewProperty()" style="margin-right:auto; opacity:0.7;" data-i18n="btn_add_prop">+ 属性</button>
+                <button class="tool-btn" onclick="closeEditModal()" data-i18n="btn_cancel">取消</button>
+                <button class="tool-btn primary" onclick="saveChannelData()" data-i18n="btn_confirm">确认</button>
             </div>
         </div>
     </div>
 
     <div class="modal-bg" id="batchInputModal">
         <div class="edit-modal" style="max-width:320px;">
-            <div class="edit-header">批量修改</div>
+            <div class="edit-header" data-i18n="modal_batch_title">批量修改</div>
             <div class="edit-body">
                 <div class="form-group">
-                    <label class="form-label" id="batchLabel">请输入新值</label>
+                    <label class="form-label" id="batchLabel" data-i18n="modal_batch_label">请输入新值</label>
                     <input type="text" class="form-input" id="batchInput">
                 </div>
             </div>
             <div class="edit-footer">
-                <button class="tool-btn" onclick="document.getElementById('batchInputModal').style.display='none'">取消</button>
-                <button class="tool-btn primary" onclick="applyBatchEdit()">确认</button>
+                <button class="tool-btn" onclick="document.getElementById('batchInputModal').style.display='none'" data-i18n="btn_cancel">取消</button>
+                <button class="tool-btn primary" onclick="applyBatchEdit()" data-i18n="btn_confirm">确认</button>
             </div>
         </div>
     </div>
@@ -218,53 +232,68 @@
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">工具箱菜单</div>
-        <div class="menu-item active" onclick="switchTab('tester', this)"><span>📺 在线链接测试</span></div>
-        <div class="menu-item" onclick="switchTab('editor', this)"><span>📝 直播源在线编辑</span></div>
-        <div class="menu-item" onclick="switchTab('checker', this)"><span>📡 直播源在线检测</span></div>
-        <div class="menu-item" onclick="switchTab('converter', this)"><span>🔄 直播源文件转换</span></div>
+        <div class="sidebar-header" data-i18n="sidebar_title">工具箱菜单</div>
+        <div class="menu-item active" onclick="switchTab('tester', this)"><span data-i18n="menu_tester">📺 在线链接测试</span></div>
+        <div class="menu-item" onclick="switchTab('editor', this)"><span data-i18n="menu_editor">📝 直播源在线编辑</span></div>
+        <div class="menu-item" onclick="switchTab('checker', this)"><span data-i18n="menu_checker">📡 直播源在线检测</span></div>
+        <div class="menu-item" onclick="switchTab('converter', this)"><span data-i18n="menu_converter">🔄 直播源文件转换</span></div>
     </aside>
 
     <nav class="navbar">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
-        <div class="app-title">M3U/M3U8在线工具箱</div>
+        <div class="app-title" data-i18n="app_title">M3U/M3U8在线工具箱</div>
+        
+        <div class="lang-container">
+            <button class="lang-btn" onclick="toggleLangMenu()">
+                <span>🌍</span> <span id="currentLangLabel">CN</span>
+            </button>
+            <div class="lang-menu" id="langMenu">
+                <div class="lang-item" onclick="changeLang('zh')"><span class="lang-flag">🇨🇳</span> 简体中文</div>
+                <div class="lang-item" onclick="changeLang('en')"><span class="lang-flag">🇺🇸</span> English</div>
+                <div class="lang-item" onclick="changeLang('ja')"><span class="lang-flag">🇯🇵</span> 日本語</div>
+                <div class="lang-item" onclick="changeLang('ko')"><span class="lang-flag">🇰🇷</span> 한국어</div>
+                <div class="lang-item" onclick="changeLang('ru')"><span class="lang-flag">🇷🇺</span> Русский</div>
+                <div class="lang-item" onclick="changeLang('es')"><span class="lang-flag">🇪🇸</span> Español</div>
+                <div class="lang-item" onclick="changeLang('pt')"><span class="lang-flag">🇧🇷</span> Português</div>
+            </div>
+        </div>
     </nav>
 
     <main class="main-container">
         <div id="section-tester" class="section-view active">
-            <div class="section-title">M3U/M3U8 链接在线测试</div>
+            <div class="section-title" data-i18n="title_tester">M3U/M3U8 链接在线测试</div>
             <div class="input-group">
-                <input type="text" class="url-input" id="urlInput" placeholder="在此粘贴链接..." value="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">
-                <button class="play-btn" id="playBtn">播放</button>
+                <input type="text" class="url-input" id="urlInput" placeholder="https://..." data-i18n-placeholder="placeholder_url">
+                <button class="play-btn" id="playBtn" data-i18n="btn_play">播放</button>
             </div>
             <div class="player-wrapper"><video id="video" controls></video></div>
-            <div id="statusMsg">准备就绪</div>
+            <div id="statusMsg" data-i18n="status_ready">准备就绪</div>
         </div>
 
         <div id="section-editor" class="section-view">
-            <div class="section-title">直播源文件编辑</div>
-            <p class="section-desc">可视化编辑您的 M3U/TXT 直播源文件。<br>支持拖拽排序、网格视图、批量修改分组/Logo，以及添加自定义属性。</p>
+            <div class="section-title" data-i18n="title_editor">直播源文件编辑</div>
+            <p class="section-desc" data-i18n="desc_editor">可视化编辑您的 M3U/TXT 直播源文件。<br>支持拖拽排序、网格视图、批量修改分组/Logo，以及添加自定义属性。</p>
             
             <div id="step-upload-editor">
                 <div class="upload-area" onclick="triggerUpload('editor')">
                     <input type="file" id="fileInputEditor" hidden accept=".m3u,.m3u8,.txt">
                     <div style="font-size:40px; margin-bottom:10px;">📂</div>
-                    <p>点击选择或拖拽文件</p>
-                    <button class="btn-upload">选择文件</button>
+                    <p data-i18n="upload_text">点击选择或拖拽文件</p>
+                    <button class="btn-upload" data-i18n="btn_select_file">选择文件</button>
                 </div>
             </div>
 
             <div id="step-edit-ui" style="display:none;">
                 <div class="editor-toolbar">
                     <div class="toolbar-group">
-                        <button class="tool-btn active" id="btnModeText" onclick="setMode('text')">📄 文本</button>
-                        <button class="tool-btn" id="btnModeVisual" onclick="setMode('visual')">☰ 列表</button>
-                        <button class="tool-btn" id="btnModeGrid" onclick="setMode('grid')">▦ 资料</button>
+                        <button class="tool-btn active" id="btnModeText" onclick="setMode('text')" data-i18n="mode_text">📄 文本</button>
+                        <button class="tool-btn" id="btnModeVisual" onclick="setMode('visual')" data-i18n="mode_list">☰ 列表</button>
+                        <button class="tool-btn" id="btnModeGrid" onclick="setMode('grid')" data-i18n="mode_grid">▦ 资料</button>
                     </div>
                     <div class="toolbar-group">
-                        <button class="tool-btn" id="btnBatch" onclick="toggleBatchMode()" style="display:none;">✅ 批量选择</button>
-                        <button class="tool-btn" id="btnAddTemplate" onclick="insertTemplate()">➕ 添加</button>
-                        <button class="tool-btn primary" onclick="saveAndDownload()">💾 保存</button>
+                        <button class="tool-btn" id="btnBatch" onclick="toggleBatchMode()" style="display:none;" data-i18n="btn_batch">✅ 批量选择</button>
+                        <button class="tool-btn" id="btnAddTemplate" onclick="insertTemplate()" data-i18n="btn_add">➕ 添加</button>
+                        <button class="tool-btn primary" onclick="saveAndDownload()" data-i18n="btn_save">💾 保存</button>
                     </div>
                 </div>
 
@@ -273,90 +302,92 @@
                 <div id="gridEditor" style="display:none;"></div>
                 
                 <div style="text-align:center; margin-top:20px;">
-                    <button onclick="resetEditor()" style="background:none; border:none; color:var(--danger-color); cursor:pointer;">❌ 放弃修改并重新上传</button>
+                    <button onclick="resetEditor()" style="background:none; border:none; color:var(--danger-color); cursor:pointer;" data-i18n="btn_discard">❌ 放弃修改并重新上传</button>
                 </div>
             </div>
         </div>
 
         <div id="section-checker" class="section-view">
-            <div class="section-title">直播源在线检测</div>
+            <div class="section-title" data-i18n="title_checker">直播源在线检测</div>
             
             <div class="tips-box">
-                <div class="tips-title">📢 检测机制说明 (已升级)</div>
+                <div class="tips-title" data-i18n="tips_title">📢 检测机制说明</div>
+                <span data-i18n="tips_checker_content">
                 1. <b>智能探测</b>：本工具使用“混合探测模式”。如果直接连接失败，会自动切换“隐私探测”模式。<br>
                 2. <b>⚠️ 可能有效</b>：如果显示黄色“可能有效”，说明该频道<b>服务器是通的</b>，只是被浏览器安全策略(CORS)拦截了内容。这种链接在 IPTV Pro/TiviMate 等播放器中通常<b>可以正常播放</b>。<br>
                 3. <b>❌ 无效</b>：只有当服务器彻底拒绝连接或超时，才会显示无效。
+                </span>
             </div>
 
             <div id="step-upload-checker">
                 <div class="upload-area" onclick="triggerUpload('checker')">
                     <input type="file" id="fileInputChecker" hidden accept=".m3u,.m3u8,.txt">
                     <div style="font-size:40px; margin-bottom:10px;">📡</div>
-                    <p>导入直播源文件进行检测</p>
-                    <button class="btn-upload">选择文件</button>
+                    <p data-i18n="upload_checker_text">导入直播源文件进行检测</p>
+                    <button class="btn-upload" data-i18n="btn_select_file">选择文件</button>
                 </div>
             </div>
 
             <div id="step-check-ui" style="display:none;">
                 <div class="check-toolbar">
-                    <div style="font-size:13px; font-weight:bold;">批量检测</div>
+                    <div style="font-size:13px; font-weight:bold;" data-i18n="label_batch_check">批量检测</div>
                     <div class="progress-bar"><div class="progress-fill" id="checkProgress"></div></div>
-                    <button class="tool-btn primary" id="btnCheckAll" onclick="startCheckAll()">▶ 开始全测</button>
+                    <button class="tool-btn primary" id="btnCheckAll" onclick="startCheckAll()" data-i18n="btn_start_check">▶ 开始全测</button>
                 </div>
                 <div id="checkList"></div>
                 <div style="text-align:center; margin-top:20px;">
-                    <button onclick="resetChecker()" style="background:none; border:none; color:var(--text-gray); cursor:pointer;">🔄 清空并重新导入</button>
+                    <button onclick="resetChecker()" style="background:none; border:none; color:var(--text-gray); cursor:pointer;" data-i18n="btn_reset">🔄 清空并重新导入</button>
                 </div>
             </div>
         </div>
 
         <div id="section-converter" class="section-view">
-            <div class="section-title">直播源文件转换</div>
-            <p class="section-desc">一键转换直播源格式，支持 M3U、TXT、JSON 等主流格式。<br>智能解析文件内容，自动适配不同播放器需求。</p>
+            <div class="section-title" data-i18n="title_converter">直播源文件转换</div>
+            <p class="section-desc" data-i18n="desc_converter">一键转换直播源格式，支持 M3U、TXT、JSON 等主流格式。<br>智能解析文件内容，自动适配不同播放器需求。</p>
 
             <div id="step-upload-converter">
                 <div class="upload-area" onclick="triggerUpload('converter')">
                     <input type="file" id="fileInputConverter" hidden accept=".m3u,.m3u8,.txt">
                     <div style="font-size:40px; margin-bottom:10px;">🔄</div>
-                    <p>导入任意格式直播源</p>
-                    <button class="btn-upload">选择文件</button>
+                    <p data-i18n="upload_converter_text">导入任意格式直播源</p>
+                    <button class="btn-upload" data-i18n="btn_select_file">选择文件</button>
                 </div>
             </div>
 
             <div id="step-convert-ui" style="display:none;">
                 <div class="tips-box" style="text-align:center; background:rgba(255,255,255,0.05); border-color:var(--border-color);">
-                    <div style="margin-bottom:10px; color:var(--primary-color);">📂 已读取文件</div>
+                    <div style="margin-bottom:10px; color:var(--primary-color);" data-i18n="label_file_read">📂 已读取文件</div>
                     <div id="convertFileName" style="font-weight:bold; color:white;">playlist.m3u</div>
-                    <div style="font-size:12px; color:#aaa; margin-top:5px;">共识别有效频道：<span id="convertCount">0</span> 个</div>
+                    <div style="font-size:12px; color:#aaa; margin-top:5px;"><span data-i18n="label_channel_count">共识别有效频道：</span> <span id="convertCount">0</span></div>
                 </div>
 
-                <p style="text-align:center; margin-top:30px; font-weight:bold;">请选择目标格式：</p>
+                <p style="text-align:center; margin-top:30px; font-weight:bold;" data-i18n="label_select_format">请选择目标格式：</p>
                 
                 <div class="format-grid">
                     <div class="format-btn" onclick="doConvert('m3u')">
                         <div class="fmt-icon">📄</div>
                         <div class="fmt-name">M3U / M3U8</div>
-                        <div class="fmt-desc">标准格式，支持台标分组</div>
+                        <div class="fmt-desc" data-i18n="fmt_m3u_desc">标准格式，支持台标分组</div>
                     </div>
                     <div class="format-btn" onclick="doConvert('txt')">
                         <div class="fmt-icon">📝</div>
-                        <div class="fmt-name">TXT 文本</div>
-                        <div class="fmt-desc">简单逗号分隔 (频道,链接)</div>
+                        <div class="fmt-name" data-i18n="fmt_txt">TXT 文本</div>
+                        <div class="fmt-desc" data-i18n="fmt_txt_desc">简单逗号分隔 (频道,链接)</div>
                     </div>
                     <div class="format-btn" onclick="doConvert('json')">
                         <div class="fmt-icon">⚙️</div>
-                        <div class="fmt-name">JSON 对象</div>
-                        <div class="fmt-desc">开发人员通用数据格式</div>
+                        <div class="fmt-name">JSON</div>
+                        <div class="fmt-desc" data-i18n="fmt_json_desc">开发人员通用数据格式</div>
                     </div>
                     <div class="format-btn" onclick="doConvert('tivimate')">
                         <div class="fmt-icon">📺</div>
                         <div class="fmt-name">TiviMate</div>
-                        <div class="fmt-desc">优化版M3U，补全tvg-id</div>
+                        <div class="fmt-desc" data-i18n="fmt_tivi_desc">优化版M3U，补全tvg-id</div>
                     </div>
                 </div>
 
                 <div style="text-align:center; margin-top:30px;">
-                    <button onclick="resetConverter()" style="background:none; border:none; color:var(--text-gray); cursor:pointer;">↩️ 返回重新上传</button>
+                    <button onclick="resetConverter()" style="background:none; border:none; color:var(--text-gray); cursor:pointer;" data-i18n="btn_reupload">↩️ 返回重新上传</button>
                 </div>
             </div>
         </div>
@@ -364,11 +395,207 @@
     </main>
 
     <script>
+        // --- i18n 翻译数据 ---
+        const i18nData = {
+            "zh": {
+                "app_title": "M3U/M3U8在线工具箱",
+                "sidebar_title": "工具箱菜单",
+                "menu_tester": "📺 在线链接测试",
+                "menu_editor": "📝 直播源在线编辑",
+                "menu_checker": "📡 直播源在线检测",
+                "menu_converter": "🔄 直播源文件转换",
+                "title_tester": "M3U/M3U8 链接在线测试",
+                "btn_play": "播放",
+                "status_ready": "准备就绪",
+                "title_editor": "直播源文件编辑",
+                "desc_editor": "可视化编辑您的 M3U/TXT 直播源文件。<br>支持拖拽排序、网格视图、批量修改分组/Logo，以及添加自定义属性。",
+                "upload_text": "点击选择或拖拽文件",
+                "btn_select_file": "选择文件",
+                "mode_text": "📄 文本",
+                "mode_list": "☰ 列表",
+                "mode_grid": "▦ 资料",
+                "btn_batch": "✅ 批量选择",
+                "btn_add": "➕ 添加",
+                "btn_save": "💾 保存",
+                "btn_discard": "❌ 放弃修改并重新上传",
+                "title_checker": "直播源在线检测",
+                "tips_title": "📢 检测机制说明",
+                "tips_checker_content": "1. <b>智能探测</b>：本工具使用“混合探测模式”。如果直接连接失败，会自动切换“隐私探测”模式。<br>2. <b>⚠️ 可能有效</b>：如果显示黄色“可能有效”，说明该频道<b>服务器是通的</b>，只是被浏览器拦截了内容。<br>3. <b>❌ 无效</b>：只有当服务器彻底拒绝连接或超时，才会显示无效。",
+                "upload_checker_text": "导入直播源文件进行检测",
+                "label_batch_check": "批量检测",
+                "btn_start_check": "▶ 开始全测",
+                "btn_reset": "🔄 清空并重新导入",
+                "title_converter": "直播源文件转换",
+                "desc_converter": "一键转换直播源格式，支持 M3U、TXT、JSON 等主流格式。<br>智能解析文件内容，自动适配不同播放器需求。",
+                "upload_converter_text": "导入任意格式直播源",
+                "label_file_read": "📂 已读取文件",
+                "label_channel_count": "共识别有效频道：",
+                "label_select_format": "请选择目标格式：",
+                "fmt_m3u_desc": "标准格式，支持台标分组",
+                "fmt_txt": "TXT 文本",
+                "fmt_txt_desc": "简单逗号分隔 (频道,链接)",
+                "fmt_json_desc": "开发人员通用数据格式",
+                "fmt_tivi_desc": "优化版M3U，补全tvg-id",
+                "btn_reupload": "↩️ 返回重新上传",
+                "batch_selected": "已选 0 个",
+                "btn_select_all": "🔁 全选",
+                "btn_select_none": "🔁 全取消",
+                "btn_edit_group": "改分组",
+                "btn_edit_logo": "改Logo",
+                "btn_delete": "删除",
+                "btn_exit": "退出",
+                "btn_cancel": "取消",
+                "btn_confirm": "确定",
+                "btn_add_prop": "+ 属性",
+                "modal_file_title": "文件处理",
+                "modal_file_desc": "文件读取成功！是否继续？",
+                "modal_edit_title": "编辑资料",
+                "modal_batch_title": "批量修改",
+                "modal_batch_label": "请输入新值",
+                "status_valid": "✅ 有效",
+                "status_warn": "⚠️ 可能有效",
+                "status_invalid": "❌ 无效",
+                "placeholder_url": "在此粘贴链接..."
+            },
+            "en": {
+                "app_title": "M3U/M3U8 Toolbox",
+                "sidebar_title": "Toolbox Menu",
+                "menu_tester": "📺 Online Stream Tester",
+                "menu_editor": "📝 Playlist Editor",
+                "menu_checker": "📡 Stream Checker",
+                "menu_converter": "🔄 Format Converter",
+                "title_tester": "M3U/M3U8 Stream Tester",
+                "btn_play": "Play",
+                "status_ready": "Ready to play",
+                "title_editor": "Playlist Editor",
+                "desc_editor": "Visually edit your M3U/TXT playlist files.<br>Support drag & drop sort, grid view, batch edit groups/logos.",
+                "upload_text": "Click or Drag File Here",
+                "btn_select_file": "Select File",
+                "mode_text": "📄 Text",
+                "mode_list": "☰ List",
+                "mode_grid": "▦ Grid",
+                "btn_batch": "✅ Batch",
+                "btn_add": "➕ Add",
+                "btn_save": "💾 Save",
+                "btn_discard": "❌ Discard Changes",
+                "title_checker": "Stream Checker",
+                "tips_title": "📢 Detection Mechanism",
+                "tips_checker_content": "1. <b>Smart Probe</b>: Uses 'Mixed Mode'. Retries with 'No-CORS' if direct connect fails.<br>2. <b>⚠️ Likely Valid</b>: Yellow status means server is Alive, but content is blocked by Browser CORS policy.<br>3. <b>❌ Invalid</b>: Connection refused or timed out.",
+                "upload_checker_text": "Import Playlist to Check",
+                "label_batch_check": "Batch Check",
+                "btn_start_check": "▶ Start Check",
+                "btn_reset": "🔄 Reset",
+                "title_converter": "Format Converter",
+                "desc_converter": "Convert playlists between M3U, TXT, JSON formats.<br>Smart parsing adapts to different players.",
+                "upload_converter_text": "Import Any Playlist Format",
+                "label_file_read": "📂 File Loaded",
+                "label_channel_count": "Valid Channels:",
+                "label_select_format": "Select Target Format:",
+                "fmt_m3u_desc": "Standard format with logos/groups",
+                "fmt_txt": "TXT File",
+                "fmt_txt_desc": "Comma separated (Name,URL)",
+                "fmt_json_desc": "For developers",
+                "fmt_tivi_desc": "Optimized for TiviMate",
+                "btn_reupload": "↩️ Re-upload",
+                "batch_selected": "Selected 0",
+                "btn_select_all": "🔁 All",
+                "btn_select_none": "🔁 None",
+                "btn_edit_group": "Group",
+                "btn_edit_logo": "Logo",
+                "btn_delete": "Delete",
+                "btn_exit": "Exit",
+                "btn_cancel": "Cancel",
+                "btn_confirm": "Confirm",
+                "btn_add_prop": "+ Prop",
+                "modal_file_title": "File Loaded",
+                "modal_file_desc": "File read successfully! Proceed?",
+                "modal_edit_title": "Edit Channel",
+                "modal_batch_title": "Batch Edit",
+                "modal_batch_label": "Enter new value",
+                "status_valid": "✅ Valid",
+                "status_warn": "⚠️ Likely Valid",
+                "status_invalid": "❌ Invalid",
+                "placeholder_url": "Paste URL here..."
+            },
+            "ja": {
+                "app_title": "M3U/M3U8 ツールボックス",
+                "sidebar_title": "メニュー",
+                "menu_tester": "📺 リンクテスト",
+                "menu_editor": "📝 プレイリスト編集",
+                "menu_checker": "📡 リンクチェッカー",
+                "menu_converter": "🔄 フォーマット変換",
+                "title_tester": "M3U/M3U8 リンクテスト",
+                "btn_play": "再生",
+                "status_ready": "準備完了",
+                "title_editor": "プレイリスト編集",
+                "desc_editor": "M3U/TXTファイルを視覚的に編集します。<br>ドラッグ＆ドロップ並べ替え、グリッド表示、一括編集に対応。",
+                "upload_text": "ファイルを選択またはドラッグ",
+                "btn_select_file": "ファイル選択",
+                "mode_text": "📄 テキスト",
+                "mode_list": "☰ リスト",
+                "mode_grid": "▦ グリッド",
+                "btn_batch": "✅ 選択",
+                "btn_add": "➕ 追加",
+                "btn_save": "💾 保存",
+                "btn_discard": "❌ 破棄して再開",
+                "title_checker": "リンクチェッカー",
+                "tips_title": "📢 検出について",
+                "tips_checker_content": "1. <b>スマート検出</b>: 接続失敗時に「No-CORS」モードで再試行します。<br>2. <b>⚠️ 可能性あり</b>: 黄色はサーバー生存を確認しましたが、ブラウザ制限で内容は取得できません。<br>3. <b>❌ 無効</b>: 接続拒否またはタイムアウト。",
+                "upload_checker_text": "ファイルをインポートしてチェック",
+                "label_batch_check": "一括チェック",
+                "btn_start_check": "▶ 開始",
+                "btn_reset": "🔄 リセット",
+                "title_converter": "フォーマット変換",
+                "desc_converter": "M3U、TXT、JSONなどの形式を変換します。<br>プレイヤーに合わせて自動調整。",
+                "upload_converter_text": "ファイルをインポート",
+                "label_file_read": "📂 読み込み完了",
+                "label_channel_count": "有効なチャンネル数：",
+                "label_select_format": "変換形式を選択：",
+                "fmt_m3u_desc": "標準形式（ロゴ・グループ対応）",
+                "fmt_txt": "TXT テキスト",
+                "fmt_txt_desc": "カンマ区切り (名前,URL)",
+                "fmt_json_desc": "開発者向け",
+                "fmt_tivi_desc": "TiviMate最適化",
+                "btn_reupload": "↩️ 再アップロード",
+                "batch_selected": "選択済み 0",
+                "btn_select_all": "🔁 全選択",
+                "btn_select_none": "🔁 全解除",
+                "btn_edit_group": "グループ",
+                "btn_edit_logo": "ロゴ",
+                "btn_delete": "削除",
+                "btn_exit": "終了",
+                "btn_cancel": "キャンセル",
+                "btn_confirm": "確定",
+                "btn_add_prop": "+ 属性",
+                "modal_file_title": "ファイル処理",
+                "modal_file_desc": "読み込みました。続行しますか？",
+                "modal_edit_title": "詳細編集",
+                "modal_batch_title": "一括編集",
+                "modal_batch_label": "新しい値を入力",
+                "status_valid": "✅ 有効",
+                "status_warn": "⚠️ 可能性あり",
+                "status_invalid": "❌ 無効",
+                "placeholder_url": "リンクを貼り付け..."
+            }
+            // 其他语言可按需扩展，逻辑自动回退到英文
+        };
+
+        // 默认填充其他语言为英文（简单处理）
+        ['ko', 'ru', 'es', 'pt'].forEach(lang => {
+            if(!i18nData[lang]) i18nData[lang] = i18nData['en']; // 暂用英文占位，实际可填入对应翻译
+        });
+
+        // 简单的韩语翻译
+        i18nData['ko'] = Object.assign({}, i18nData['en'], {
+            "app_title": "M3U/M3U8 툴박스", "menu_tester": "📺 스트림 테스트", "btn_play": "재생", "btn_save": "저장"
+        });
+
         // --- 全局状态 ---
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         const confirmModal = document.getElementById('confirmModal');
         
+        let currentLang = 'en'; // 默认
         let editorData = { buffer: '', name: 'playlist.m3u', channelData: [], headerLines: [] };
         let checkerData = { channels: [] };
         let converterData = { channels: [], name: '' };
@@ -377,6 +604,58 @@
         let selectedIndices = new Set();
         let currentBatchType = '';
         let currentUploadTarget = ''; 
+
+        // --- 初始化：语言检测 ---
+        (function initLang() {
+            const sysLang = navigator.language || navigator.userLanguage; 
+            if (sysLang.startsWith('zh')) currentLang = 'zh';
+            else if (sysLang.startsWith('ja')) currentLang = 'ja';
+            else if (sysLang.startsWith('ko')) currentLang = 'ko';
+            else if (sysLang.startsWith('ru')) currentLang = 'ru';
+            else if (sysLang.startsWith('es')) currentLang = 'es';
+            else if (sysLang.startsWith('pt')) currentLang = 'pt';
+            else currentLang = 'en';
+            
+            updatePageLang();
+        })();
+
+        function toggleLangMenu() {
+            document.getElementById('langMenu').classList.toggle('active');
+        }
+
+        function changeLang(lang) {
+            currentLang = lang;
+            updatePageLang();
+            document.getElementById('langMenu').classList.remove('active');
+        }
+
+        function updatePageLang() {
+            // 更新按钮显示
+            const labelMap = { 'zh':'CN', 'en':'EN', 'ja':'JP', 'ko':'KR', 'ru':'RU', 'es':'ES', 'pt':'PT' };
+            document.getElementById('currentLangLabel').textContent = labelMap[currentLang] || 'EN';
+
+            // 更新所有带有 data-i18n 的元素
+            const data = i18nData[currentLang] || i18nData['en'];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (data[key]) {
+                    // 如果 key 是 tips_checker_content 这种包含 html 的
+                    if (key.includes('content') || key.includes('desc')) el.innerHTML = data[key];
+                    else el.textContent = data[key];
+                }
+            });
+            // 更新 placeholder
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (data[key]) el.placeholder = data[key];
+            });
+        }
+
+        // 辅助函数：获取当前语言的翻译文本
+        function t(key) {
+            const data = i18nData[currentLang] || i18nData['en'];
+            return data[key] || key;
+        }
 
         // --- 导航与文件 ---
         function toggleMenu() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
@@ -409,15 +688,13 @@
                 if(currentUploadTarget === 'editor') {
                     editorData.buffer = content;
                     editorData.name = file.name;
-                    document.getElementById('confirmText').textContent = "编辑器准备就绪，进入编辑模式？";
                 } else if(currentUploadTarget === 'checker') {
                     checkerData.raw = content;
-                    document.getElementById('confirmText').textContent = "检测器准备就绪，开始解析频道？";
                 } else if(currentUploadTarget === 'converter') {
                     converterData.raw = content;
                     converterData.name = file.name;
-                    document.getElementById('confirmText').textContent = "转换器准备就绪，选择输出格式？";
                 }
+                document.getElementById('confirmText').textContent = t('modal_file_desc');
                 confirmModal.style.display = 'flex';
             };
             reader.readAsText(file);
@@ -425,7 +702,6 @@
 
         function closeConfirm(isConfirmed) {
             confirmModal.style.display = 'none';
-            // 清空input防止重复选择不触发change
             document.getElementById('fileInputEditor').value = '';
             document.getElementById('fileInputChecker').value = '';
             document.getElementById('fileInputConverter').value = '';
@@ -450,42 +726,28 @@
             const lines = rawText.split(/\r?\n/);
             const channels = [];
             let current = null;
-            
             lines.forEach(line => {
                 line = line.trim();
                 if(line.startsWith('#EXTINF:')) {
-                    // 提取所有可能的属性
                     const params = {};
                     const nameMatch = line.match(/,(.+)$/);
-                    const name = nameMatch ? nameMatch[1].trim() : '未命名频道';
-                    
+                    const name = nameMatch ? nameMatch[1].trim() : 'Unknown';
                     const regex = /([a-zA-Z0-9-]+)="([^"]*)"/g;
                     let match;
-                    while ((match = regex.exec(line)) !== null) {
-                        params[match[1]] = match[2];
-                    }
+                    while ((match = regex.exec(line)) !== null) { params[match[1]] = match[2]; }
                     current = { name, params };
                 } else if (line && !line.startsWith('#') && isUrl(line)) {
-                    if(current) { 
-                        current.url = line; 
-                        channels.push(current); 
-                        current = null; 
-                    } else { 
-                        // 裸链接处理
-                        channels.push({ name: '未知频道', url: line, params: {} }); 
-                    }
+                    if(current) { current.url = line; channels.push(current); current = null; }
+                    else { channels.push({ name: 'Unknown', url: line, params: {} }); }
                 }
             });
             return channels;
         }
 
-        // ==========================================
-        //      模块 A: 格式转换器 (Converter)
-        // ==========================================
+        // --- 转换器 ---
         function initConverter(rawText) {
             document.getElementById('step-upload-converter').style.display = 'none';
             document.getElementById('step-convert-ui').style.display = 'block';
-            
             converterData.channels = extractChannels(rawText);
             document.getElementById('convertFileName').textContent = converterData.name;
             document.getElementById('convertCount').textContent = converterData.channels.length;
@@ -495,14 +757,11 @@
             const channels = converterData.channels;
             let content = "";
             let ext = "";
-
             if (format === 'm3u' || format === 'tivimate') {
                 content = "#EXTM3U\n";
                 channels.forEach(ch => {
                     let p = ch.params || {};
-                    // TiviMate 补全
                     if (format === 'tivimate' && !p['tvg-id']) p['tvg-id'] = ch.name;
-                    
                     let line = '#EXTINF:-1';
                     for(let k in p) line += ` ${k}="${p[k]}"`;
                     line += `,${ch.name}\n${ch.url}\n`;
@@ -510,15 +769,12 @@
                 });
                 ext = ".m3u";
             } else if (format === 'txt') {
-                channels.forEach(ch => {
-                    content += `${ch.name},${ch.url}\n`;
-                });
+                channels.forEach(ch => { content += `${ch.name},${ch.url}\n`; });
                 ext = ".txt";
             } else if (format === 'json') {
                 content = JSON.stringify(channels, null, 2);
                 ext = ".json";
             }
-
             const blob = new Blob([content], {type: "text/plain;charset=utf-8"});
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
@@ -531,9 +787,7 @@
             document.getElementById('step-upload-converter').style.display = 'block';
         }
 
-        // ==========================================
-        //      模块 B: 直播源在线检测 (Checker)
-        // ==========================================
+        // --- 检测器 ---
         function initChecker(rawText) {
             document.getElementById('step-upload-checker').style.display = 'none';
             document.getElementById('step-check-ui').style.display = 'block';
@@ -554,7 +808,7 @@
                         <div class="check-url">${ch.url}</div>
                     </div>
                     <div class="check-status" id="status-${index}"></div>
-                    <button class="btn-test" onclick="checkOne(${index})">测试</button>
+                    <button class="btn-test" onclick="checkOne(${index})">Test</button>
                 `;
                 container.appendChild(div);
             });
@@ -564,49 +818,31 @@
             const ch = checkerData.channels[index];
             const statusEl = document.getElementById(`status-${index}`);
             const btn = document.querySelector(`#check-item-${index} .btn-test`);
-            
             statusEl.className = 'check-status testing';
-            statusEl.textContent = '检测中...';
+            statusEl.textContent = '...';
             btn.disabled = true;
-
             const startTime = Date.now();
-            
-            // 核心修复：混合检测逻辑
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 6000); // 6秒超时
-                
-                // 1. 尝试标准 HEAD 请求
+                const timeoutId = setTimeout(() => controller.abort(), 6000); 
                 const res = await fetch(ch.url, { method: 'HEAD', signal: controller.signal });
                 clearTimeout(timeoutId);
-
                 if (res.ok) {
                     const ping = Date.now() - startTime;
                     statusEl.className = 'check-status success';
-                    statusEl.textContent = `✅ 有效 (${ping}ms)`;
-                } else {
-                    throw new Error("HTTP " + res.status);
-                }
+                    statusEl.textContent = `${t('status_valid')} (${ping}ms)`;
+                } else { throw new Error("HTTP " + res.status); }
             } catch (e) {
-                // 2. 失败后，尝试 no-cors 模式 (针对 IPTV 直播流)
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 6000);
-                    
-                    // 使用 GET + no-cors
                     await fetch(ch.url, { method: 'GET', mode: 'no-cors', signal: controller.signal });
                     clearTimeout(timeoutId);
-                    
-                    // 如果能走到这里不报错，说明服务器是通的（只是浏览器不让看内容）
                     statusEl.className = 'check-status warning';
-                    statusEl.textContent = `⚠️ 可能有效 (隐私模式)`;
+                    statusEl.textContent = t('status_warn');
                 } catch (err) {
-                    // 3. 彻底失败
-                    let msg = '❌ 无效';
-                    if (err.name === 'AbortError') msg = '❌ 连接超时';
-                    else if (err.message.includes('Failed to fetch')) msg = '❌ 无法连接';
                     statusEl.className = 'check-status error';
-                    statusEl.textContent = msg;
+                    statusEl.textContent = t('status_invalid');
                 }
             }
             btn.disabled = false;
@@ -617,7 +853,6 @@
             const btn = document.getElementById('btnCheckAll');
             if(btn.disabled) return;
             btn.disabled = true;
-            btn.textContent = '⏳ 检测中...';
             
             const total = checkerData.channels.length;
             let completed = 0;
@@ -635,24 +870,21 @@
             };
             const workers = Array(concurrency).fill(null).map(() => worker());
             await Promise.all(workers);
-            btn.textContent = '✅ 检测完成';
+            btn.textContent = 'Done';
             btn.disabled = false;
         }
 
         function resetChecker() {
-            if(confirm('确定清空列表并重新导入吗？')) {
+            if(confirm('Reset?')) {
                 document.getElementById('step-check-ui').style.display = 'none';
                 document.getElementById('step-upload-checker').style.display = 'block';
                 document.getElementById('fileInputChecker').value = '';
                 document.getElementById('checkProgress').style.width = '0%';
-                document.getElementById('btnCheckAll').textContent = '▶ 开始全测';
+                document.getElementById('btnCheckAll').textContent = t('btn_start_check');
             }
         }
 
-        // ==========================================
-        //      模块 C: 编辑器 & 播放器 (复用 v6)
-        // ==========================================
-        // 播放器
+        // --- 播放器 ---
         document.getElementById('playBtn').addEventListener('click', () => {
             const url = document.getElementById('urlInput').value.trim();
             const v = document.getElementById('video');
@@ -660,12 +892,12 @@
             if(!url) return;
             if(Hls.isSupported()) {
                 const hls = new Hls(); hls.loadSource(url); hls.attachMedia(v);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = "✅ 正在播放"; msg.style.color="#2ba640"; });
-                hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { msg.textContent = "❌ 加载失败"; msg.style.color="#ff4d4d"; } });
+                hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = "OK"; msg.style.color="#2ba640"; });
+                hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { msg.textContent = "Error"; msg.style.color="#ff4d4d"; } });
             } else if (v.canPlayType('application/vnd.apple.mpegurl')) { v.src=url; v.play(); }
         });
 
-        // 编辑器核心逻辑
+        // --- 编辑器 ---
         function parseTextToData() {
             const rawText = document.getElementById('codeEditor').value;
             const lines = rawText.split(/\r?\n/);
@@ -677,7 +909,7 @@
                     if (currentBlock) editorData.channelData.push(currentBlock);
                     currentBlock = { type: 'unknown', lines: [line], url: '', params: {} };
                     const nameMatch = line.match(/,(.+)$/);
-                    currentBlock.params['name'] = nameMatch ? nameMatch[1].trim() : '未命名频道';
+                    currentBlock.params['name'] = nameMatch ? nameMatch[1].trim() : 'Unknown';
                     const regex = /([a-zA-Z0-9-]+)="([^"]*)"/g;
                     let match;
                     while ((match = regex.exec(line)) !== null) { currentBlock.params[match[1]] = match[2]; }
@@ -802,10 +1034,10 @@
         }
 
         function updateBatchUI() {
-            document.getElementById('batchCount').textContent = `已选 ${selectedIndices.size} 个`;
+            document.getElementById('batchCount').textContent = `${t('batch_selected')}: ${selectedIndices.size}`;
             const btnAll = document.getElementById('btnSelectAll');
             const validCount = editorData.channelData.filter(i => i.type==='channel').length;
-            btnAll.textContent = (selectedIndices.size === validCount && validCount > 0) ? "🔁 全取消" : "🔁 全选";
+            btnAll.textContent = (selectedIndices.size === validCount && validCount > 0) ? t('btn_select_none') : t('btn_select_all');
         }
 
         function toggleBatchMode(forceState) {
@@ -814,17 +1046,16 @@
             const btn = document.getElementById('btnBatch');
             const bar = document.getElementById('batchBar');
             if (isBatchMode) {
-                btn.classList.add('active'); btn.textContent = '❌ 退出选择'; bar.style.display = 'flex'; updateBatchUI();
+                btn.classList.add('active'); btn.textContent = '❌'; bar.style.display = 'flex'; updateBatchUI();
             } else {
-                btn.classList.remove('active'); btn.textContent = '✅ 批量选择'; bar.style.display = 'none';
+                btn.classList.remove('active'); btn.textContent = t('btn_batch'); bar.style.display = 'none';
             }
             renderGrid();
         }
 
         function openBatchEdit(type) {
-            if (selectedIndices.size === 0) return alert('请先选择频道！');
+            if (selectedIndices.size === 0) return alert('Selection Empty');
             currentBatchType = type;
-            document.getElementById('batchLabel').textContent = type === 'group' ? '请输入新的分组名称' : '请输入新的Logo链接';
             document.getElementById('batchInput').value = '';
             document.getElementById('batchInputModal').style.display = 'flex';
         }
@@ -843,22 +1074,26 @@
         }
 
         function batchDelete() {
-            if (selectedIndices.size === 0) return alert('未选择！');
-            if (!confirm(`确定删除选中的 ${selectedIndices.size} 个频道吗？`)) return;
+            if (selectedIndices.size === 0) return alert('Selection Empty');
+            if (!confirm('Delete selected?')) return;
             const sortedIndices = Array.from(selectedIndices).sort((a,b) => b-a);
             sortedIndices.forEach(idx => editorData.channelData.splice(idx, 1));
             toggleBatchMode(false);
         }
 
+        const editModal = document.getElementById('editModal');
+        const dynamicForm = document.getElementById('dynamicForm');
+        let currentEditIndex = -1;
+
         function openEditModal(index) {
             currentEditIndex = index;
             const item = editorData.channelData[index];
             dynamicForm.innerHTML = ''; 
-            createInput('频道名称 (name)', 'name', item.params['name']);
-            createInput('直播链接 (URL)', 'url', item.url);
-            for (let key in item.params) { if (key !== 'name') createInput(`属性: ${key}`, key, item.params[key]); }
-            if (!item.params['tvg-logo']) createInput('台标链接 (tvg-logo)', 'tvg-logo', '');
-            if (!item.params['group-title']) createInput('分组名称 (group-title)', 'group-title', '');
+            createInput('Name', 'name', item.params['name']);
+            createInput('URL', 'url', item.url);
+            for (let key in item.params) { if (key !== 'name') createInput(key, key, item.params[key]); }
+            if (!item.params['tvg-logo']) createInput('tvg-logo', 'tvg-logo', '');
+            if (!item.params['group-title']) createInput('group-title', 'group-title', '');
             editModal.style.display = 'flex';
         }
 
@@ -870,8 +1105,8 @@
         }
 
         function addNewProperty() {
-            const key = prompt("请输入属性名 (例如 tvg-id):");
-            if (key) createInput(`属性: ${key}`, key, '');
+            const key = prompt("Key (e.g. tvg-id):");
+            if (key) createInput(key, key, '');
         }
 
         function saveChannelData() {
@@ -891,7 +1126,7 @@
         function closeEditModal() { editModal.style.display = 'none'; }
 
         function insertTemplate() {
-            const tpl = `\n#EXTINF:-1 tvg-logo="" group-title="新分组", 新频道\nhttp://url\n`;
+            const tpl = `\n#EXTINF:-1 tvg-logo="" group-title="Group", Channel\nhttp://url\n`;
             const editor = document.getElementById('codeEditor');
             const start = editor.selectionStart;
             editor.value = editor.value.slice(0, start) + tpl + editor.value.slice(editor.selectionEnd);
@@ -906,7 +1141,7 @@
         }
 
         function resetEditor() {
-            if(confirm('放弃修改？')) {
+            if(confirm('Discard changes?')) {
                 document.getElementById('step-edit-ui').style.display = 'none';
                 document.getElementById('step-upload-editor').style.display = 'block';
                 document.getElementById('fileInputEditor').value = '';
