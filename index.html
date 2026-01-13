@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OSB PLAYER | LIVE TERMINAL</title>
+    <meta name="referrer" content="no-referrer">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Oswald:wght@500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ================== 🎨 全局变量定义 ================== */
+        :root {
+            /* [默认模式] High-End Elegant (赛博黑绿) */
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-main: #e6edf3;
+            --text-sub: #8b949e;
+            --accent-color: #3fb950; /* 标志性的 Terminal Green */
+            --highlight: rgba(63, 185, 80, 0.15);
+            --border-color: #30363d;
+            --shadow: 0 4px 12px rgba(0,0,0,0.5);
+            --font-display: 'Oswald', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        /* [Ambience 模式] 只有解锁后才会激活的变量 */
+        body.unlocked {
+            --bg-color: #120512; /* 深紫黑 */
+            --card-bg: #1f0a1f;
+            --text-main: #ffe6ff;
+            --text-sub: #d68bd6;
+            --accent-color: #ff55ff; /* 霓虹粉 */
+            --highlight: rgba(255, 85, 255, 0.15);
+            --border-color: #4d1a4d;
+            --shadow: 0 4px 20px rgba(255, 0, 255, 0.2);
+        }
+
+        /* ================== 🖼️ 基础布局 ================== */
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh; display: flex; flex-direction: column;
+            overflow: hidden; transition: background-color 0.8s ease, color 0.8s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 顶部导航栏 */
+        header {
+            padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(13, 17, 23, 0.95);
+            z-index: 50; backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 24px; color: var(--accent-color);
+            letter-spacing: 2px; cursor: pointer; user-select: none;
+            text-shadow: 0 0 5px var(--highlight);
+            transition: all 0.5s;
+        }
+        
+        /* 搜索框 */
+        .search-box {
+            position: relative; max-width: 300px; width: 40%;
+        }
+        .search-input {
+            width: 100%; padding: 8px 15px 8px 35px;
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 20px; color: var(--text-main); outline: none;
+            transition: 0.3s;
+        }
+        .search-input:focus { border-color: var(--accent-color); box-shadow: 0 0 8px var(--highlight); }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-sub); font-size: 12px; }
+
+        /* ================== 🧊 宫格导航系统 ================== */
+        #main-container {
+            flex: 1; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* 分类标签栏 */
+        #category-bar {
+            padding: 10px 20px; display: flex; gap: 15px; overflow-x: auto;
+            white-space: nowrap; scrollbar-width: none;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #category-bar::-webkit-scrollbar { display: none; }
+        
+        .cat-btn {
+            background: transparent; border: none; color: var(--text-sub);
+            font-family: var(--font-display); font-size: 14px; cursor: pointer;
+            padding: 5px 0; position: relative; transition: 0.3s; text-transform: uppercase;
+        }
+        .cat-btn.active { color: var(--accent-color); font-weight: bold; }
+        .cat-btn.active::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%;
+            height: 2px; background: var(--accent-color);
+            box-shadow: 0 0 5px var(--accent-color);
+        }
+
+        /* 宫格展示区 */
+        #grid-view {
+            flex: 1; padding: 20px; overflow-y: auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px; align-content: start;
+        }
+
+        .channel-card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; overflow: hidden; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s; position: relative;
+            display: flex; flex-direction: column; aspect-ratio: 16/11;
+        }
+        .channel-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-color: var(--accent-color);
+        }
+        
+        /* 图片容器：支持 jpg/png，自带占位符 */
+        .card-img-wrap {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            background: #000; overflow: hidden; position: relative;
+        }
+        .card-img {
+            width: 100%; height: 100%; object-fit: cover; /* 撑满 */
+            opacity: 0.9; transition: 0.3s;
+        }
+        .channel-card:hover .card-img { opacity: 1; transform: scale(1.05); }
+
+        /* 默认无图时的占位文字 */
+        .img-placeholder {
+            position: absolute; color: #333; font-family: monospace; font-size: 20px; font-weight: bold;
+        }
+
+        .card-info {
+            padding: 8px 10px; background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+        }
+        .card-title {
+            font-size: 12px; font-weight: 600; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; display: block;
+        }
+
+        /* ================== 🎬 沉浸式播放器 ================== */
+        #player-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 100;
+            display: flex; flex-direction: column;
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        #player-modal.active { transform: translateY(0); }
+
+        /* 视频区域 */
+        #video-stage {
+            flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        video { width: 100%; height: 100%; max-height: 100vh; }
+
+        /* 弹幕层 - Canvas */
+        #danmaku-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 20;
+        }
+
+        /* 播放器UI层 */
+        .player-ui-top {
+            position: absolute; top: 0; left: 0; width: 100%; height: 60px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            z-index: 30; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px;
+        }
+        .back-btn { color: #fff; font-size: 20px; cursor: pointer; text-shadow: 0 0 5px #000; }
+        
+        .live-badge {
+            background: rgba(255, 0, 0, 0.2); border: 1px solid red;
+            color: red; padding: 2px 8px; border-radius: 4px;
+            font-size: 10px; font-weight: bold; font-family: var(--font-display);
+            display: flex; align-items: center; gap: 5px;
+        }
+        .live-dot { width: 6px; height: 6px; background: red; border-radius: 50%; animation: blink 1s infinite; }
+
+        .player-ui-bottom {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            z-index: 30; padding: 15px 20px 25px;
+            display: flex; gap: 10px; align-items: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        #video-stage:hover .player-ui-bottom { opacity: 1; } /* 鼠标悬停显示 */
+
+        .dm-input {
+            flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px; padding: 8px 15px; color: #fff; outline: none; font-size: 14px;
+            backdrop-filter: blur(5px);
+        }
+        .control-btn {
+            color: #fff; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border-radius: 50%; transition: 0.2s;
+        }
+        .control-btn:hover { background: rgba(255,255,255,0.2); }
+
+        @keyframes blink { 0%,100% {opacity:1} 50% {opacity:0} }
+
+        /* 加载动画 */
+        #loader {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: var(--accent-color); font-family: monospace; font-size: 14px;
+            display: none;
+        }
+        
+        /* 彩蛋触发反馈动画 */
+        @keyframes pulse-logo {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.1); filter: brightness(1.5) drop-shadow(0 0 10px var(--accent-color)); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        .logo.triggering { animation: pulse-logo 1s infinite; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo" id="osb-logo">OSB<span style="font-size:12px; opacity:0.7;"> PLAYER</span></div>
+    <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" id="search" placeholder="FILTER CHANNELS...">
+    </div>
+</header>
+
+<div id="main-container">
+    <div id="category-bar">
+        </div>
+    <div id="grid-view">
+        <div style="text-align:center; width:100%; padding:50px; color:#666;">LOADING DATABASE...</div>
+    </div>
+</div>
+
+<div id="player-modal">
+    <div id="video-stage">
+        <div id="loader">CONNECTING STREAM...</div>
+        <video id="video" playsinline webkit-playsinline></video>
+        <canvas id="danmaku-canvas"></canvas>
+        
+        <div class="player-ui-top">
+            <div class="back-btn" onclick="closePlayer()"><i class="fas fa-chevron-left"></i> BACK</div>
+            <div class="live-badge"><div class="live-dot"></div> LIVE SIGNAL</div>
+        </div>
+
+        <div class="player-ui-bottom">
+            <input type="text" class="dm-input" id="dm-text" placeholder="Send a ephemeral message...">
+            <div class="control-btn" onclick="sendDanmaku()"><i class="fas fa-paper-plane"></i></div>
+            <div class="control-btn" onclick="toggleDanmaku()"><i class="fas fa-comment-dots"></i></div>
+            <div class="control-btn" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================== 🔧 配置区域 ==================
+    const CONFIG = {
+        // 后端 M3U8 地址 (直接指向你的 live 仓库)
+        sourceUrl: 'https://raw.githubusercontent.com/satan-1412/live/main/TV.m3u8',
+        
+        // 🔒 加密黑名单 (Base64编码)
+        // 对应： "成人在线", "成人电视台", "R18"
+        // 只有在解锁模式下，包含这些关键词的分类才会显示
+        hiddenKeywords: ["5oiQ5Lq65Zyo57q/", "5oiQ5Lq655S16KeG5Y+w", "UjE4"],
+        
+        logoTriggerTime: 10000 // 长按10秒触发
+    };
+
+    // ================== 🔐 核心逻辑 ==================
+    
+    let allChannels = [];
+    let currentCategory = 'ALL';
+    let isUnlocked = false; // 默认锁定
+    let hls = null;
+    let logoTimer = null;
+
+    // 1. 初始化
+    window.onload = () => {
+        initDatabase();
+        initEasterEgg();
+        initDanmakuEngine();
+    };
+
+    function initDatabase() {
+        fetch(CONFIG.sourceUrl)
+            .then(r => r.text())
+            .then(parseM3U8)
+            .catch(e => {
+                document.getElementById('grid-view').innerHTML = `<div style="padding:40px;text-align:center;color:red">CONNECTION FAILED</div>`;
+            });
+    }
+
+    // 2. 解析器 (支持 tvg-logo, group-title)
+    function parseM3U8(data) {
+        allChannels = [];
+        const lines = data.split('\n');
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('#EXTINF')) {
+                // 提取信息
+                const title = line.split(',')[1] || 'Unknown Channel';
+                const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                const groupMatch = line.match(/group-title="([^"]+)"/);
+                const url = lines[i+1] ? lines[i+1].trim() : '';
+                
+                if (url && url.startsWith('http')) {
+                    allChannels.push({
+                        title: title,
+                        logo: logoMatch ? logoMatch[1] : null,
+                        group: groupMatch ? groupMatch[1] : 'Unclassified',
+                        url: url
+                    });
+                }
+            }
+        }
+        renderCategories();
+        renderGrid();
+    }
+
+    // 3. 安全过滤检查
+    function isHiddenGroup(groupName) {
+        if (isUnlocked) return false; // 解锁后不过滤
+        // 解码黑名单进行比对
+        return CONFIG.hiddenKeywords.some(b64 => groupName.includes(atob(b64)));
+    }
+
+    // 4. 渲染分类栏
+    function renderCategories() {
+        const groups = new Set(['ALL']);
+        allChannels.forEach(ch => {
+            if (!isHiddenGroup(ch.group)) groups.add(ch.group);
+        });
+
+        const bar = document.getElementById('category-bar');
+        bar.innerHTML = '';
+        groups.forEach(g => {
+            const btn = document.createElement('button');
+            btn.className = `cat-btn ${g === currentCategory ? 'active' : ''}`;
+            btn.innerText = g;
+            btn.onclick = () => {
+                currentCategory = g;
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderGrid();
+            };
+            bar.appendChild(btn);
+        });
+    }
+
+    // 5. 渲染宫格 (Grid)
+    function renderGrid() {
+        const grid = document.getElementById('grid-view');
+        grid.innerHTML = '';
+        const search = document.getElementById('search').value.toLowerCase();
+
+        const filtered = allChannels.filter(ch => {
+            // 权限过滤
+            if (isHiddenGroup(ch.group)) return false;
+            // 分类过滤
+            if (currentCategory !== 'ALL' && ch.group !== currentCategory) return false;
+            // 搜索过滤
+            if (search && !ch.title.toLowerCase().includes(search)) return false;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div style="width:100%;text-align:center;color:#555;">NO SIGNAL</div>';
+            return;
+        }
+
+        filtered.forEach(ch => {
+            const card = document.createElement('div');
+            card.className = 'channel-card';
+            card.onclick = () => openPlayer(ch.url);
+            
+            // 图片处理 (支持 jpg/png)
+            let imgHtml = `<div class="img-placeholder">OSB</div>`;
+            if (ch.logo) {
+                imgHtml = `<img src="${ch.logo}" class="card-img" onerror="this.style.display='none'">`;
+            }
+
+            card.innerHTML = `
+                <div class="card-img-wrap">${imgHtml}</div>
+                <div class="card-info">
+                    <span class="card-title">${ch.title}</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // 搜索监听
+    document.getElementById('search').addEventListener('input', renderGrid);
+
+    // ================== 🥚 彩蛋系统 (Long Press) ==================
+    function initEasterEgg() {
+        const logo = document.getElementById('osb-logo');
+        
+        const start = (e) => {
+            // e.preventDefault(); // 可能会阻止点击，视情况开启
+            logo.classList.add('triggering');
+            logoTimer = setTimeout(() => {
+                triggerUnlock();
+            }, CONFIG.logoTriggerTime);
+        };
+        
+        const end = () => {
+            logo.classList.remove('triggering');
+            clearTimeout(logoTimer);
+        };
+
+        // 鼠标/触摸事件
+        logo.addEventListener('mousedown', start);
+        logo.addEventListener('touchstart', start);
+        logo.addEventListener('mouseup', end);
+        logo.addEventListener('mouseleave', end);
+        logo.addEventListener('touchend', end);
+    }
+
+    function triggerUnlock() {
+        isUnlocked = !isUnlocked; // 切换状态
+        document.body.className = isUnlocked ? 'unlocked' : '';
+        // 震动反馈 (Android)
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        // 重新渲染数据
+        renderCategories();
+        renderGrid();
+        alert(isUnlocked ? "SYSTEM OVERRIDE: ACCESS GRANTED" : "SYSTEM RESTORED");
+    }
+
+    // ================== 📺 播放器逻辑 ==================
+    const playerModal = document.getElementById('player-modal');
+    const video = document.getElementById('video');
+    const loader = document.getElementById('loader');
+
+    function openPlayer(url) {
+        playerModal.classList.add('active');
+        loader.style.display = 'block';
+        
+        if (Hls.isSupported()) {
+            if (hls) hls.destroy();
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                loader.style.display = 'none';
+                video.play();
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.addEventListener('loadedmetadata', () => {
+                loader.style.display = 'none';
+                video.play();
+            });
+        }
+    }
+
+    function closePlayer() {
+        playerModal.classList.remove('active');
+        video.pause();
+        if (hls) hls.destroy();
+        clearDanmaku(); // 清空弹幕
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.getElementById('video-stage').requestFullscreen().catch(err => {});
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // ================== 🚀 即时弹幕引擎 (Canvas) ==================
+    const canvas = document.getElementById('danmaku-canvas');
+    const ctx = canvas.getContext('2d');
+    let danmakuList = [];
+    let showDanmaku = true;
+
+    function initDanmakuEngine() {
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        requestAnimationFrame(drawDanmaku);
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.font = "bold 24px sans-serif";
+    }
+
+    function sendDanmaku() {
+        const input = document.getElementById('dm-text');
+        const text = input.value.trim();
+        if (!text) return;
+
+        danmakuList.push({
+            text: text,
+            x: canvas.width,
+            y: Math.random() * (canvas.height / 3) + 50, // 仅在上方1/3区域
+            color: '#fff',
+            speed: 2 + Math.random() * 2
+        });
+        
+        input.value = '';
+    }
+
+    document.getElementById('dm-text').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendDanmaku();
+    });
+
+    function toggleDanmaku() {
+        showDanmaku = !showDanmaku;
+        canvas.style.opacity = showDanmaku ? 1 : 0;
+    }
+
+    function clearDanmaku() {
+        danmakuList = [];
+    }
+
+    function drawDanmaku() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (showDanmaku) {
+            for (let i = 0; i < danmakuList.length; i++) {
+                const dm = danmakuList[i];
+                dm.x -= dm.speed;
+                
+                // 绘制文字
+                ctx.fillStyle = dm.color;
+                ctx.shadowColor = "black";
+                ctx.shadowBlur = 4;
+                ctx.fillText(dm.text, dm.x, dm.y);
+
+                // 移除出界的弹幕
+                if (dm.x < -ctx.measureText(dm.text).width) {
+                    danmakuList.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+        requestAnimationFrame(drawDanmaku);
+    }
+
+</script>
+</body>
+</html>
