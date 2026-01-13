@@ -3,38 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>OSB PLAYER | SYSTEM</title>
+    <title>OSB PLAYER | LIVE</title>
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta name="referrer" content="no-referrer">
+    
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;600&family=Noto+Sans+SC:wght@300;500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* ================== 核心视觉 V3.1 ================== */
+        /* ================== V4.0 视觉修复 ================== */
         :root {
-            /* 默认模式 */
-            --bg-color: #0a0a0a;
-            --bg-image: none;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --text-main: #f0f0f0;
-            --text-sub: #888;
-            --accent: #00ff88;
-            --border: rgba(255, 255, 255, 0.1);
-            --blur: 10px;
-            --font-main: 'Noto Sans SC', sans-serif;
-            --font-display: 'Exo 2', sans-serif;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #fff;
+            --text-sub: #aaa;
+            --accent: #00ff88; /* 正常模式：极客绿 */
+            --gap: 15px;
         }
 
-        /* Root 模式 */
+        /* 成人模式配色 */
         body.root-mode {
-            --bg-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'); 
-            --bg-color: #1a0510;
-            --card-bg: rgba(40, 0, 20, 0.6);
+            --bg-color: #2a0a18; /* 深红黑 */
+            --card-bg: #3d1020;
+            --accent: #ff0055; /* 霓虹粉 */
             --text-main: #xffddee;
-            --text-sub: #ff99cc;
-            --accent: #ff0077;
-            --border: rgba(255, 0, 119, 0.3);
-            --blur: 20px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -42,452 +35,186 @@
         body {
             margin: 0; padding: 0;
             background-color: var(--bg-color);
-            background-image: var(--bg-image);
-            background-size: cover; background-position: center; background-attachment: fixed;
-            color: var(--text-main); font-family: var(--font-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             height: 100vh; display: flex; flex-direction: column;
-            overflow: hidden; transition: all 0.6s ease;
+            overflow: hidden;
+            transition: background-color 0.5s;
         }
 
-        body::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.9));
-            z-index: -1; pointer-events: none;
-        }
-
-        /* 头部 */
+        /* 顶部导航 */
         header {
-            padding: 15px 20px; 
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(var(--blur));
-            border-bottom: 1px solid var(--border); z-index: 50;
+            padding: 10px 15px;
+            background: rgba(30,30,30,0.9);
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 50;
         }
 
         .logo {
-            font-family: var(--font-display); font-size: 22px; font-weight: 700;
-            color: var(--accent); letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5); cursor: pointer; user-select: none;
+            font-size: 20px; font-weight: 900; color: var(--accent);
+            letter-spacing: -1px; white-space: nowrap;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: 0.3s;
         }
-        
-        .search-container { position: relative; width: 40%; max-width: 300px; }
+
+        .search-box {
+            flex: 1; position: relative;
+        }
         .search-input {
-            width: 100%; background: rgba(255,255,255,0.1); border: 1px solid var(--border);
-            border-radius: 50px; padding: 8px 15px 8px 35px; color: #fff; outline: none;
-            font-size: 14px; transition: 0.3s;
+            width: 100%; background: #333; border: none;
+            border-radius: 6px; padding: 8px 10px 8px 30px;
+            color: #fff; font-size: 14px;
         }
-        .search-input:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
-        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-sub); font-size: 12px; }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #777; font-size: 12px; }
 
-        /* 内容区 */
-        #main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        
-        /* 错误日志面板 (平时隐藏，出错显示) */
-        #error-log {
-            display: none; padding: 10px; background: rgba(255,0,0,0.2); 
-            border-bottom: 1px solid red; color: #ff9999; font-size: 12px; font-family: monospace;
-            white-space: pre-wrap; word-break: break-all;
+        /* 内容区域 */
+        #main-container {
+            flex: 1; display: flex; flex-direction: column; overflow: hidden;
         }
 
+        /* 分类栏 (横向滚动) */
         #nav-scroll {
-            padding: 10px 15px; display: flex; gap: 15px; overflow-x: auto;
-            border-bottom: 1px solid var(--border); scrollbar-width: none;
+            padding: 10px 15px; display: flex; gap: 10px;
+            overflow-x: auto; white-space: nowrap;
+            background: var(--bg-color);
+            scrollbar-width: none; /* Firefox 隐藏滚动条 */
         }
-        #nav-scroll::-webkit-scrollbar { display: none; }
-        
-        .nav-btn {
-            background: transparent; border: none; color: var(--text-sub);
-            font-size: 15px; font-weight: 500; white-space: nowrap; cursor: pointer;
-            padding: 5px 10px; border-radius: 20px; transition: 0.3s;
-        }
-        .nav-btn.active { background: var(--accent); color: #000; box-shadow: 0 0 10px var(--accent); }
+        #nav-scroll::-webkit-scrollbar { display: none; } /* Chrome 隐藏滚动条 */
 
-        /* 宫格布局 */
-        #channel-grid {
-            flex: 1; padding: 20px; overflow-y: auto;
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px; align-content: start;
+        .nav-btn {
+            padding: 6px 14px; border-radius: 20px;
+            background: rgba(255,255,255,0.1); color: #ccc;
+            border: none; font-size: 13px;
         }
-        @media (max-width: 768px) {
-            #channel-grid { padding: 15px; gap: 15px; grid-template-columns: repeat(2, 1fr); }
-            .logo { font-size: 18px; }
-            .search-container { width: 50%; }
+        .nav-btn.active { background: var(--accent); color: #000; font-weight: bold; }
+
+        /* ======== 核心修复：宫格布局 ======== */
+        #channel-grid {
+            flex: 1; padding: 15px; overflow-y: auto;
+            display: grid;
+            /* 手机端默认双列，每列自适应 */
+            grid-template-columns: repeat(2, 1fr); 
+            grid-auto-rows: max-content; /* 高度根据内容定 */
+            gap: 15px; /* 间距 */
+            align-content: start;
+        }
+
+        /* 电脑端适配：屏幕宽了就变多列 */
+        @media (min-width: 768px) {
+            #channel-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
         }
 
         .card {
-            background: var(--card-bg); border-radius: 12px; overflow: hidden;
-            border: 1px solid var(--border); cursor: pointer; aspect-ratio: 16/10;
-            display: flex; flex-direction: column; position: relative;
-            transition: transform 0.2s; backdrop-filter: blur(5px);
+            background: var(--card-bg); border-radius: 8px;
+            overflow: hidden; position: relative;
+            display: flex; flex-direction: column;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: 0.2s;
         }
-        .card:hover { transform: translateY(-5px); border-color: var(--accent); }
-        .card-img-box { flex: 1; background: #000; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;}
-        .card-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: 0.5s; position: absolute; top:0; left:0;}
-        .card:hover .card-img { opacity: 1; transform: scale(1.1); }
-        .card-placeholder { font-family: var(--font-display); font-size: 20px; color: rgba(255,255,255,0.2); }
-        .card-title { padding: 10px; font-size: 13px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; background: rgba(0,0,0,0.3); }
+        .card:active { transform: scale(0.98); }
 
-        /* 播放器 */
+        /* 图片容器：固定比例 16:9，防止图片太高 */
+        .card-img-wrap {
+            width: 100%; aspect-ratio: 16/9; 
+            background: #000; position: relative;
+        }
+        .card-img {
+            width: 100%; height: 100%; object-fit: cover; /* 裁剪填满，不拉伸 */
+            display: block; opacity: 1; transition: 0.3s;
+        }
+        
+        /* 图片加载失败时的默认图标 */
+        .card-icon-fallback {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            display: flex; align-items: center; justify-content: center;
+            background: #222; color: #444; font-size: 30px;
+        }
+
+        .card-title {
+            padding: 8px 10px; font-size: 13px; color: #ddd;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-align: center; background: rgba(0,0,0,0.2);
+        }
+
+        /* ======== 播放器 & 弹幕 ======== */
         #player-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 100; display: none; flex-direction: column;
+            background: #000; z-index: 100;
+            display: none; flex-direction: column;
         }
         #player-modal.active { display: flex; }
 
-        #video-container { position: relative; width: 100%; flex: 1; background: #000; display: flex; align-items: center; justify-content: center; }
-        /* 键盘顶起逻辑 */
-        body.keyboard-active #video-container { flex: 0 0 40vh; }
-
+        /* 视频区：占满剩余空间 */
+        #video-stage {
+            flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
+            background: #000; overflow: hidden;
+        }
         video { width: 100%; height: 100%; max-height: 100%; }
-        #danmaku-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
 
-        .player-top { position: absolute; top: 0; left: 0; width: 100%; height: 60px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
-        .close-btn { color: #fff; font-size: 24px; cursor: pointer; }
-        .live-status { display: flex; align-items: center; gap: 6px; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.6); padding: 4px 10px; border-radius: 4px; color: #ff3333; font-weight: bold; font-size: 12px; }
-        .live-dot { width: 8px; height: 8px; background: red; border-radius: 50%; animation: blink 1s infinite; box-shadow: 0 0 5px red; }
+        /* 弹幕层 */
+        #danmaku-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 80%; /* 留出底部空间 */
+            pointer-events: none; z-index: 20;
+        }
 
-        .player-bottom { width: 100%; padding: 10px 15px; background: #111; border-top: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 40; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
-        .dm-input { flex: 1; background: #222; border: 1px solid #444; color: #fff; padding: 10px 15px; border-radius: 20px; outline: none; font-size: 14px; }
-        .dm-input:focus { border-color: var(--accent); background: #000; }
-        .action-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ddd; font-size: 18px; cursor: pointer; }
-        .send-btn { color: var(--accent); }
+        /* 顶部栏 */
+        .player-header {
+            position: absolute; top: 0; left: 0; width: 100%; height: 50px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 15px;
+        }
+        .close-btn { color: #fff; font-size: 20px; padding: 10px; }
+        .live-tag {
+            color: red; font-size: 12px; font-weight: bold; border: 1px solid red;
+            padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.5);
+        }
 
-        @keyframes blink { 0%,100% {opacity:1} 50% {opacity:0.3} }
-        @keyframes pulse-color { 0% {color: var(--accent);} 50% {color: #fff; text-shadow:0 0 15px var(--accent);} 100% {color: var(--accent);} }
-        .triggering { animation: pulse-color 0.5s infinite; }
+        /* 底部控制栏：固定在底部，键盘弹起时由浏览器自动顶起 */
+        .player-controls {
+            width: 100%; background: #1a1a1a;
+            padding: 10px; display: flex; align-items: center; gap: 10px;
+            border-top: 1px solid #333; z-index: 40;
+            padding-bottom: env(safe-area-inset-bottom); /* 适配 iPhone 底部黑条 */
+        }
         
-        /* Loading 状态 */
-        .loading-state { grid-column: 1/-1; text-align: center; padding: 50px; color: #666; font-size: 14px; }
+        .dm-input {
+            flex: 1; height: 36px; border-radius: 18px; border: none;
+            padding: 0 15px; background: #333; color: #fff; font-size: 14px;
+        }
+        .dm-send {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--accent); color: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+
+        /* 呼吸灯动画 */
+        .triggering { animation: pulse 0.5s infinite; color: #fff !important; }
+        @keyframes pulse { 50% { text-shadow: 0 0 15px var(--accent); } }
+
+        /* 错误提示 */
+        #debug-toast {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 15px; border-radius: 8px;
+            text-align: center; display: none; z-index: 200; font-size: 14px; max-width: 80%;
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo" id="osb-logo">OSB <span style="font-size:12px;opacity:0.6">PRO</span></div>
-    <div class="search-container">
+    <div class="logo" id="logo-trigger">OSB<span style="font-size:12px;opacity:0.6">PRO</span></div>
+    <div class="search-box">
         <i class="fas fa-search search-icon"></i>
-        <input type="text" class="search-input" id="search-box" placeholder="搜索频道...">
+        <input type="text" class="search-input" id="search-input" placeholder="搜索频道...">
     </div>
 </header>
 
 <div id="main-container">
-    <div id="error-log"></div> <div id="nav-scroll"></div>
+    <div id="nav-scroll"></div>
     <div id="channel-grid">
-        <div class="loading-state"><i class="fas fa-circle-notch fa-spin"></i> SYSTEM INITIALIZING...</div>
-    </div>
-</div>
-
-<div id="player-modal">
-    <div id="video-container">
-        <video id="video-player" playsinline webkit-playsinline></video>
-        <canvas id="danmaku-layer"></canvas>
-        <div class="player-top">
-            <div class="close-btn" onclick="closePlayer()"><i class="fas fa-chevron-down"></i></div>
-            <div class="live-status"><div class="live-dot"></div> LIVE</div>
+        <div style="grid-column:1/-1; text-align:center; padding:50px; color:#666;">
+            <i class="fas fa-circle-notch fa-spin"></i> 系统加载中...
         </div>
     </div>
-    <div class="player-bottom">
-        <div class="action-btn" onclick="toggleDanmaku()"><i class="fas fa-comment-slash" id="dm-icon"></i></div>
-        <input type="text" class="dm-input" id="dm-input" placeholder="发送弹幕..." autocomplete="off">
-        <div class="action-btn send-btn" onclick="sendDanmaku()"><i class="fas fa-paper-plane"></i></div>
-        <div class="action-btn" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></div>
-    </div>
-</div>
-
-<script>
-    // ================= 🛡️ 全局异常捕获 (最优先运行) =================
-    window.onerror = function(msg, url, line, col, error) {
-        const log = document.getElementById('error-log');
-        log.style.display = 'block';
-        log.innerHTML += `[ERROR] ${msg} (Line:${line})\n`;
-        return false;
-    };
-
-    // ================= 🔧 配置中心 =================
-    const CONFIG = {
-        // 正常源
-        safeUrl: 'https://raw.githubusercontent.com/satan-1412/live/refs/heads/main/no%20sex/TV_1(no%20sex).m3u8',
-        
-        // 成人源 (混淆加密) - 检查这里是否复制完整
-        _secret: "ODN1bS5WVC9uaWFtL2V2aWwvMjE0MS1uYXRhcy9tb2MudG5ldG5vY3Jlc3VidWh0aWcud2FyLy86c3B0dGg=",
-        
-        triggerTime: 10000 
-    };
-
-    // 状态管理
-    let app = {
-        mode: 'SAFE',
-        data: [],
-        cat: 'ALL',
-        hls: null
-    };
-
-    // ================= 🚀 初始化逻辑 =================
-    
-    // 确保 Logo 监听独立于网络请求，哪怕没网也能触发
-    function initLogoTrigger() {
-        const logo = document.getElementById('osb-logo');
-        let timer = null;
-        
-        const start = (e) => {
-            // e.preventDefault(); // 如有点击冲突可开启
-            logo.classList.add('triggering');
-            timer = setTimeout(toggleMode, CONFIG.triggerTime);
-        };
-        const end = () => {
-            clearTimeout(timer);
-            logo.classList.remove('triggering');
-        };
-
-        ['mousedown', 'touchstart'].forEach(evt => logo.addEventListener(evt, start));
-        ['mouseup', 'mouseleave', 'touchend'].forEach(evt => logo.addEventListener(evt, end));
-        console.log("Logo trigger initialized");
-    }
-
-    window.onload = () => {
-        try {
-            initLogoTrigger(); // 优先加载彩蛋
-            initDanmaku();
-            initKeyboardFix();
-            loadSource(CONFIG.safeUrl); // 最后加载网络数据
-        } catch (e) {
-            alert("初始化失败: " + e.message);
-        }
-    };
-
-    // ================= 📡 数据层 =================
-    
-    function getSecretUrl() {
-        try {
-            return atob(CONFIG._secret).split('').reverse().join('');
-        } catch(e) { 
-            console.error("解密失败", e);
-            return ''; 
-        }
-    }
-
-    function loadSource(url) {
-        const grid = document.getElementById('channel-grid');
-        grid.innerHTML = '<div class="loading-state"><i class="fas fa-sync fa-spin"></i> UPDATING DATABASE...</div>';
-        
-        // 添加时间戳防止缓存
-        const noCacheUrl = url + '?t=' + new Date().getTime();
-
-        fetch(noCacheUrl)
-            .then(response => {
-                if (!response.ok) throw new Error("HTTP " + response.status);
-                return response.text();
-            })
-            .then(text => {
-                if (!text || text.length < 10) throw new Error("空数据或无效文件");
-                parseM3U8(text);
-            })
-            .catch(err => {
-                grid.innerHTML = `<div class="loading-state" style="color:red">
-                    <i class="fas fa-exclamation-triangle"></i> 连接失败<br>
-                    <small>${err.message}</small><br>
-                    <small>请检查网络或 CORS 设置</small>
-                </div>`;
-            });
-    }
-
-    function parseM3U8(content) {
-        app.data = [];
-        const lines = content.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (line.startsWith('#EXTINF')) {
-                const title = line.split(',')[1] || '未知频道';
-                const logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || '';
-                const group = (line.match(/group-title="([^"]+)"/) || [])[1] || '其它';
-                const url = lines[i+1] ? lines[i+1].trim() : '';
-                
-                if (url && url.startsWith('http')) {
-                    app.data.push({ title, logo, group, url });
-                }
-            }
-        }
-        
-        if (app.data.length === 0) {
-            document.getElementById('channel-grid').innerHTML = '<div class="loading-state">未找到有效频道</div>';
-        } else {
-            renderNav();
-            renderGrid();
-        }
-    }
-
-    // ================= 🎨 渲染层 =================
-    function renderNav() {
-        const groups = new Set(['ALL']);
-        app.data.forEach(d => groups.add(d.group));
-        
-        const nav = document.getElementById('nav-scroll');
-        nav.innerHTML = '';
-        groups.forEach(g => {
-            const btn = document.createElement('button');
-            btn.className = `nav-btn ${g === app.cat ? 'active' : ''}`;
-            btn.innerText = g;
-            btn.onclick = () => { app.cat = g; renderNav(); renderGrid(); };
-            nav.appendChild(btn);
-        });
-    }
-
-    function renderGrid() {
-        const grid = document.getElementById('channel-grid');
-        grid.innerHTML = '';
-        const keyword = document.getElementById('search-box').value.toLowerCase();
-        
-        const list = app.data.filter(d => {
-            if (app.cat !== 'ALL' && d.group !== app.cat) return false;
-            if (keyword && !d.title.toLowerCase().includes(keyword)) return false;
-            return true;
-        });
-
-        if (list.length === 0) {
-            grid.innerHTML = '<div class="loading-state">无搜索结果</div>';
-            return;
-        }
-
-        list.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.onclick = () => playVideo(item.url);
-            
-            let imgHTML = `<div class="card-placeholder">OSB</div>`;
-            if (item.logo) imgHTML = `<img src="${item.logo}" class="card-img" onerror="this.style.opacity=0">`;
-
-            card.innerHTML = `
-                <div class="card-img-box">${imgHTML}</div>
-                <div class="card-title">${item.title}</div>
-            `;
-            grid.appendChild(card);
-        });
-    }
-    
-    document.getElementById('search-box').addEventListener('input', renderGrid);
-
-    // ================= 🎬 播放控制 =================
-    const modal = document.getElementById('player-modal');
-    const video = document.getElementById('video-player');
-
-    function playVideo(url) {
-        modal.classList.add('active');
-        if (Hls.isSupported()) {
-            if (app.hls) app.hls.destroy();
-            app.hls = new Hls();
-            app.hls.loadSource(url);
-            app.hls.attachMedia(video);
-            app.hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
-            video.play();
-        }
-        startDmLoop();
-    }
-
-    function closePlayer() {
-        modal.classList.remove('active');
-        video.pause();
-        if (app.hls) app.hls.destroy();
-        stopDmLoop();
-    }
-
-    function toggleFullScreen() {
-        const el = document.getElementById('video-container');
-        if (!document.fullscreenElement) el.requestFullscreen().catch(()=>{});
-        else document.exitFullscreen();
-    }
-
-    function initKeyboardFix() {
-        const input = document.getElementById('dm-input');
-        input.addEventListener('focus', () => {
-            document.body.classList.add('keyboard-active');
-            setTimeout(() => input.scrollIntoView({behavior:"smooth"}), 300);
-        });
-        input.addEventListener('blur', () => document.body.classList.remove('keyboard-active'));
-    }
-
-    // ================= 🚀 弹幕逻辑 (优化版) =================
-    const canvas = document.getElementById('danmaku-layer');
-    const ctx = canvas.getContext('2d');
-    let dms = []; 
-    let dmRaf = null;
-    let showDm = true;
-
-    function initDanmaku() {
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-    }
-    function resizeCanvas() {
-        canvas.width = canvas.parentElement.offsetWidth;
-        canvas.height = canvas.parentElement.offsetHeight;
-        ctx.font = "bold 20px 'Noto Sans SC'";
-    }
-
-    function sendDanmaku() {
-        const input = document.getElementById('dm-input');
-        const txt = input.value.trim();
-        if (!txt) return;
-        
-        dms.push({
-            text: txt,
-            x: canvas.width,
-            y: 40 + Math.random() * (canvas.height * 0.4),
-            speed: 2 + Math.random(),
-            color: '#00ff88',
-            isSelf: true
-        });
-        input.value = '';
-        input.focus();
-    }
-    
-    document.getElementById('dm-input').addEventListener('keypress', e => {
-        if(e.key === 'Enter') sendDanmaku();
-    });
-
-    function toggleDanmaku() {
-        showDm = !showDm;
-        canvas.style.opacity = showDm ? 1 : 0;
-        document.getElementById('dm-icon').className = showDm ? 'fas fa-comment-dots' : 'fas fa-comment-slash';
-    }
-
-    function startDmLoop() { if(!dmRaf) loop(); }
-    function stopDmLoop() { cancelAnimationFrame(dmRaf); dmRaf = null; dms = []; ctx.clearRect(0,0,canvas.width,canvas.height); }
-
-    function loop() {
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        if (showDm) {
-            for (let i=0; i<dms.length; i++) {
-                let d = dms[i];
-                d.x -= d.speed;
-                ctx.fillStyle = d.color || '#fff';
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 3;
-                ctx.strokeText(d.text, d.x, d.y);
-                ctx.fillText(d.text, d.x, d.y);
-                if (d.x < -ctx.measureText(d.text).width) {
-                    dms.splice(i, 1); i--;
-                }
-            }
-        }
-        dmRaf = requestAnimationFrame(loop);
-    }
-
-    // ================= 🥚 模式切换 =================
-    function toggleMode() {
-        if (app.mode === 'SAFE') {
-            app.mode = 'ROOT';
-            document.body.classList.add('root-mode');
-            alert("✅ ACCESS GRANTED");
-            loadSource(getSecretUrl());
-        } else {
-            app.mode = 'SAFE';
-            document.body.classList.remove('root-mode');
-            alert("🛡️ SYSTEM RESTORED");
-            loadSource(CONFIG.safeUrl);
-        }
-        if (navigator.vibrate) navigator.vibrate(200);
-    }
-</script>
-</body>
-</html>
