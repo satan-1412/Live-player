@@ -36,7 +36,7 @@
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 150; backdrop-filter: blur(2px); }
         .overlay.active { opacity: 1; visibility: visible; }
 
-        .main-container { flex: 1; padding: 20px; width: 100%; max-width: 1000px; margin: 0 auto; overflow-y: auto; padding-bottom: 80px; }
+        .main-container { flex: 1; padding: 20px; width: 100%; max-width: 1000px; margin: 0 auto; overflow-y: auto; padding-bottom: 100px; }
         .section-view { display: none; width: 100%; animation: fadeIn 0.3s; }
         .section-view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
@@ -120,6 +120,7 @@
     <div class="batch-bar" id="batchBar">
         <div class="batch-info" id="batchCount">已选 0 个频道</div>
         <div class="batch-actions">
+            <button class="tool-btn" id="btnSelectAll" onclick="toggleSelectAll()">🔁 全选</button>
             <button class="tool-btn" onclick="openBatchEdit('group')">改分组</button>
             <button class="tool-btn" onclick="openBatchEdit('logo')">改Logo</button>
             <button class="tool-btn danger" onclick="batchDelete()">删除</button>
@@ -293,6 +294,7 @@
             }
         }
 
+        // --- 核心解析器 v5.2 (过滤无链接模板) ---
         function parseTextToData() {
             const lines = document.getElementById('codeEditor').value.split(/\r?\n/);
             channelData = [];
@@ -306,7 +308,11 @@
 
                 if (line.startsWith('#EXTINF:')) {
                     isHeader = false;
-                    if (current) channelData.push(current);
+                    // 【关键修复】: 结算上一个频道时，检查它是否有URL
+                    // 如果有URL -> 存入 channelData (显示在网格)
+                    // 如果无URL -> 将其作为“注释/分隔符”附加到 前一个频道 的 extras 里 (隐藏在网格，但保存时不丢失)
+                    saveCurrentChannel(current);
+                    
                     current = { rawHeader: line, extras: [], url: '', params: {} };
                     const nameMatch = line.match(/,(.+)$/);
                     current.params['name'] = nameMatch ? nameMatch[1].trim() : '未命名频道';
@@ -320,14 +326,34 @@
                 } else if (current) {
                     if (!line.startsWith('#')) {
                         current.url = line;
-                        channelData.push(current);
-                        current = null;
+                        // 遇到URL，立即结算保存？不，等到下个EXTINF或结束
                     } else {
                         current.extras.push(line);
                     }
                 }
             });
-            if (current) channelData.push(current);
+            // 结算最后一个
+            saveCurrentChannel(current);
+        }
+
+        // 辅助函数：决定是存为频道还是存为注释
+        function saveCurrentChannel(ch) {
+            if (!ch) return;
+            // 只有当 URL 存在且不为空时，才算作有效频道
+            if (ch.url && ch.url.trim() !== '') {
+                channelData.push(ch);
+            } else {
+                // 这是一个无链接的模板/占位符
+                // 把它还原成文本行，附加到上一个频道的 extras 里
+                // 这样既从网格中“消失”了，保存时又会写回到文件里
+                const linesToSave = [ch.rawHeader, ...ch.extras];
+                if (channelData.length > 0) {
+                    channelData[channelData.length - 1].extras.push(...linesToSave);
+                } else {
+                    // 如果文件开头就是模板，放到 headerLines
+                    headerLines.push(...linesToSave);
+                }
+            }
         }
 
         function syncDataToText() {
@@ -416,9 +442,33 @@
                 if (selectedIndices.has(index)) selectedIndices.delete(index);
                 else selectedIndices.add(index);
                 renderGrid();
-                document.getElementById('batchCount').textContent = `已选 ${selectedIndices.size} 个频道`;
+                updateBatchUI(); // 更新全选按钮状态
             } else {
                 openEditModal(index);
+            }
+        }
+
+        // --- 全选功能 ---
+        function toggleSelectAll() {
+            if (selectedIndices.size === channelData.length) {
+                // 已全选 -> 全不选
+                selectedIndices.clear();
+            } else {
+                // 未全选 -> 全选
+                selectedIndices.clear();
+                channelData.forEach((_, idx) => selectedIndices.add(idx));
+            }
+            renderGrid();
+            updateBatchUI();
+        }
+
+        function updateBatchUI() {
+            document.getElementById('batchCount').textContent = `已选 ${selectedIndices.size} 个频道`;
+            const btnAll = document.getElementById('btnSelectAll');
+            if (selectedIndices.size === channelData.length && channelData.length > 0) {
+                btnAll.textContent = "🔁 全取消";
+            } else {
+                btnAll.textContent = "🔁 全选";
             }
         }
 
@@ -431,7 +481,7 @@
                 btn.classList.add('active');
                 btn.textContent = '❌ 退出选择';
                 bar.style.display = 'flex';
-                document.getElementById('batchCount').textContent = '已选 0 个频道';
+                updateBatchUI();
             } else {
                 btn.classList.remove('active');
                 btn.textContent = '✅ 批量选择';
@@ -468,7 +518,7 @@
             toggleBatchMode(false);
         }
 
-        // --- 核心修复：弹窗显示逻辑 ---
+        // --- 弹窗逻辑 ---
         const editModal = document.getElementById('editModal');
         const dynamicForm = document.getElementById('dynamicForm');
 
@@ -486,7 +536,6 @@
             if (!ch.params['tvg-logo']) createInput('台标链接 (tvg-logo)', 'tvg-logo', '');
             if (!ch.params['group-title']) createInput('分组名称 (group-title)', 'group-title', '');
 
-            // 修正：直接控制弹窗元素显示
             editModal.style.display = 'flex';
         }
 
@@ -519,7 +568,6 @@
         }
 
         function closeEditModal() { 
-            // 修正：直接控制弹窗元素隐藏
             editModal.style.display = 'none'; 
         }
 
