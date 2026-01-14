@@ -59,7 +59,7 @@
 
         /* --- 3. 通用组件 --- */
         .section-title { font-size: 24px; font-weight: 700; margin: 10px 0 15px; text-align: center; color: var(--primary-color); }
-        .section-desc { text-align: center; color: var(--text-gray); font-size: 14px; margin-bottom: 30px; line-height: 1.6; max-width: 800px; margin-left: auto; margin-right: auto; }
+        .section-desc { text-align: center; color: var(--text-gray); font-size: 14px; margin-bottom: 25px; line-height: 1.6; max-width: 800px; margin-left: auto; margin-right: auto; }
         
         .input-group { display: flex; width: 100%; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
         .url-input { flex: 1; background: var(--surface-color); border: none; padding: 15px; color: white; font-size: 15px; }
@@ -148,7 +148,7 @@
         .fmt-name { font-weight: bold; font-size: 16px; color: white; margin-bottom: 5px; }
         .fmt-desc { font-size: 13px; color: var(--text-gray); line-height: 1.4; }
 
-        /* --- 8. 捕捉测试新样式 (New) --- */
+        /* --- 8. 捕捉测试新样式 --- */
         .capture-result { margin-top: 20px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: none; }
         .capture-loading { display: none; text-align: center; color: var(--text-gray); padding: 20px; }
         .quality-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
@@ -264,6 +264,13 @@
     <main class="main-container">
         <div id="section-tester" class="section-view active">
             <div class="section-title">M3U/M3U8 链接在线测试</div>
+            <div class="tips-box">
+                <div class="tips-title">💡 测试说明</div>
+                <span>
+                此工具仅用于测试链接的<b>连通性</b>和<b>初始加载</b>。<br>
+                注意：部分流媒体因 <b>CORS（跨域策略）</b> 限制可能无法在浏览器中播放，或者拖动进度条时可能出现缓冲错误，这通常属于源站限制而非工具故障。
+                </span>
+            </div>
             <div class="input-group">
                 <input type="text" class="url-input" id="urlInput" placeholder="在此粘贴 M3U8 链接...">
                 <button class="play-btn" id="playBtn">播放</button>
@@ -274,10 +281,15 @@
 
         <div id="section-capture" class="section-view">
             <div class="section-title">在线网站捕捉测试 (yt-dlp)</div>
-            <p class="section-desc">
-                测试网站链接（如 YouTube, Twitch, 虎牙等）是否支持捕捉，并查看可用的画质格式。<br>
-                注意：此功能依赖后端 API，需部署后才可使用。
-            </p>
+            <div class="tips-box">
+                <div class="tips-title">🛠️ 功能与部署说明</div>
+                <span style="font-size:13px; line-height: 1.6;">
+                <b>功能用途：</b> 输入视频网站链接（如 YouTube, Twitch, 虎牙等），测试后端是否能解析出 M3U8 直播流或真实播放地址。<br><br>
+                <b>⚠️ 开发者注意：</b><br>
+                1. <b>当前站点</b>：本演示站已连接配套的 Python 后端，您可以直接使用下方的测试功能。<br>
+                2. <b>如果您复制了本项目</b>：纯前端（Github Pages 等）无法直接运行此功能。您必须在服务器（如 Vercel, VPS）上部署配套的 <code>api/check.py</code> 后端代码才能生效。
+                </span>
+            </div>
             <div class="input-group">
                 <input type="text" class="url-input" id="captureInput" placeholder="https://www.youtube.com/watch?v=...">
                 <button class="play-btn" id="captureBtn" onclick="testCaptureUrl()">测试链接</button>
@@ -293,7 +305,11 @@
 
         <div id="section-editor" class="section-view">
             <div class="section-title">直播源文件编辑</div>
-            <p class="section-desc">可视化编辑您的 M3U/TXT 直播源文件。<br>支持拖拽排序、网格视图、批量修改分组/Logo。</p>
+            <p class="section-desc">
+                可视化编辑您的 M3U/TXT 直播源文件。<br>
+                支持拖拽排序、网格视图、批量修改分组/Logo。<br>
+                <span style="color:#666; font-size:12px;">建议：为防止浏览器卡顿，建议编辑 10MB 以下的文件。</span>
+            </p>
             
             <div id="step-upload-editor">
                 <div class="upload-area" onclick="triggerUpload('editor')">
@@ -363,7 +379,10 @@
 
         <div id="section-converter" class="section-view">
             <div class="section-title">直播源文件转换</div>
-            <p class="section-desc">一键转换直播源格式，支持 M3U、TXT、JSON 等主流格式。<br>智能解析文件内容，自动适配不同播放器需求。</p>
+            <p class="section-desc">
+                一键转换直播源格式，支持 M3U、TXT、JSON 等主流格式。<br>
+                智能解析文件内容，自动适配不同播放器需求。
+            </p>
 
             <div id="step-upload-converter">
                 <div class="upload-area" onclick="triggerUpload('converter')">
@@ -696,17 +715,66 @@
             }
         }
 
-        // --- 播放器逻辑 ---
+        // --- 播放器逻辑 (已修复 Seek 错误) ---
         document.getElementById('playBtn').addEventListener('click', () => {
             const url = document.getElementById('urlInput').value.trim();
             const v = document.getElementById('video');
             const msg = document.getElementById('statusMsg');
+            
             if(!url) return;
+            
+            msg.textContent = "连接中...";
+            msg.style.color = "#aaaaaa";
+
             if(Hls.isSupported()) {
-                const hls = new Hls(); hls.loadSource(url); hls.attachMedia(v);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = "播放中..."; msg.style.color="#2ba640"; });
-                hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { msg.textContent = "播放错误"; msg.style.color="#ff4d4d"; } });
-            } else if (v.canPlayType('application/vnd.apple.mpegurl')) { v.src=url; v.play(); }
+                if(window.hls) window.hls.destroy(); // 销毁旧实例
+                
+                const hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                });
+                window.hls = hls; // 挂载到全局方便调试
+                
+                hls.loadSource(url);
+                hls.attachMedia(v);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    v.play().catch(() => {
+                        console.log('Autoplay prevented');
+                    });
+                    msg.textContent = "✅ 播放中";
+                    msg.style.color = "#2ba640";
+                });
+
+                // 错误处理优化：尝试恢复而非直接报错
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.log("Network error encountered, trying to recover...");
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log("Media error encountered, trying to recover...");
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                hls.destroy();
+                                msg.textContent = "❌ 无法播放 (Fatal Error)";
+                                msg.style.color = "#ff4d4d";
+                                break;
+                        }
+                    }
+                });
+            } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+                v.src = url;
+                v.play();
+                msg.textContent = "Native HLS 播放中";
+            } else {
+                msg.textContent = "❌ 浏览器不支持 HLS";
+                msg.style.color = "#ff4d4d";
+            }
         });
 
         // --- 编辑器逻辑 ---
