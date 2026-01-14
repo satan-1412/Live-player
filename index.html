@@ -615,7 +615,8 @@
 
             try {
                 // 注意：这里需要配合后端 API (/api/check)
-                const response = await fetch(`/api/check?url=${encodeURIComponent(url)}`);
+                // 指向手机本地服务器端口 5000
+                const response = await fetch(`http://127.0.0.1:5000/api/check?url=${encodeURIComponent(url)}`);
                 const data = await response.json();
 
                 loadingDiv.style.display = 'none';
