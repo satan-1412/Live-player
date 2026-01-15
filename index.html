@@ -5,165 +5,104 @@
     <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>M3U/M3U8 Web Toolbox</title>
-
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <style>
-        /* --- 全局变量 --- */
-        :root {
-            --bg-color: #0f0f0f;
-            --surface-color: #1e1e1e;
-            --surface-active: #333333;
-            --primary-color: #3ea6ff;
-            --accent-color: #a54aff;
-            --danger-color: #ff4d4d;
-            --success-color: #2ba640;
-            --text-color: #ffffff;
-            --text-gray: #aaaaaa;
-            --border-color: rgba(255, 255, 255, 0.15);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-
-        /* --- 导航栏 --- */
-        .navbar { 
-            display: flex; align-items: center; height: 64px; padding: 0 20px; 
-            background: rgba(15,15,15,0.95); border-bottom: 1px solid var(--border-color); 
-            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); justify-content: space-between;
-        }
-        .menu-btn { background: none; border: none; color: white; font-size: 24px; padding: 5px; cursor: pointer; }
-        .app-title { 
-            font-size: 20px; font-weight: 700; 
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); 
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            position: absolute; left: 50%; transform: translateX(-50%); white-space: nowrap;
-        }
+        :root { --bg:#0f0f0f; --surface:#1e1e1e; --primary:#3ea6ff; --danger:#ff4d4d; --success:#2ba640; --text:#fff; --gray:#aaa; --border:rgba(255,255,255,0.15); }
+        * { box-sizing:border-box; margin:0; padding:0; outline:none; -webkit-tap-highlight-color:transparent; }
+        body { font-family:sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow-x:hidden; }
         
-        /* 语言菜单 */
-        .lang-container { position: relative; z-index: 101; }
-        .lang-btn { background: none; border: 1px solid var(--border-color); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .lang-menu { 
-            position: absolute; top: 120%; right: 0; background: var(--surface-color); border: 1px solid var(--border-color); 
-            border-radius: 8px; width: 160px; display: none; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.6); overflow: hidden;
-        }
-        .lang-menu.active { display: flex; }
-        .lang-item { padding: 12px 16px; cursor: pointer; font-size: 14px; color: #ddd; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .lang-item:hover { background: var(--surface-active); color: white; }
-
-        /* --- 侧边栏 --- */
-        .sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 260px; background: var(--surface-color); transform: translateX(-100%); transition: 0.3s; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
-        .sidebar.active { transform: translateX(0); }
-        .sidebar-header { height: 64px; display: flex; align-items: center; padding-left: 20px; border-bottom: 1px solid var(--border-color); font-weight: bold; color: var(--text-gray); }
-        .menu-item { padding: 15px 20px; color: white; transition: 0.2s; border-left: 4px solid transparent; cursor: pointer; font-size: 15px; }
-        .menu-item.active { border-left-color: var(--primary-color); color: var(--primary-color); background: rgba(255,255,255,0.05); font-weight: bold; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 150; }
-        .overlay.active { opacity: 1; visibility: visible; }
-
-        /* --- 主内容 --- */
-        .main-container { flex: 1; padding: 20px; width: 100%; max-width: 900px; margin: 0 auto; overflow-y: auto; padding-bottom: 120px; }
-        .section-view { display: none; animation: fadeIn 0.3s; }
-        .section-view.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
-
-        /* --- 蓝色标题与提示框 (重点修复) --- */
-        .section-title { font-size: 22px; font-weight: 700; margin: 10px 0 15px; text-align: center; color: var(--primary-color); }
-        .tips-box { background: rgba(62, 166, 255, 0.08); border: 1px solid rgba(62, 166, 255, 0.2); border-radius: 8px; padding: 18px; margin-bottom: 25px; font-size: 14px; color: #ccc; line-height: 1.6; }
-        .tips-title { color: var(--primary-color); font-weight: bold; margin-bottom: 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-
-        /* --- 播放器 (16:9 修复) --- */
-        .player-wrapper { width: 100%; background: #000; border-radius: 12px; position: relative; padding-top: 56.25%; margin-bottom: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .input-group { display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
-        .url-input { flex: 1; background: var(--surface-color); border: none; padding: 15px; color: white; font-size: 15px; }
-        .play-btn { background: var(--primary-color); color: #000; border: none; padding: 0 30px; font-weight: bold; cursor: pointer; }
-
-        /* --- 捕捉结果 --- */
-        .capture-result { margin-top: 25px; display: none; }
-        .result-card { background: rgba(30,30,30,0.95); border: 1px solid var(--border-color); border-left: 5px solid var(--success-color); border-radius: 12px; padding: 20px; }
-        .result-thumb-box { width: 100%; height: 180px; background: #000; border-radius: 8px; margin-bottom: 15px; overflow: hidden; display: none; position: relative; }
-        .result-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-        .result-header { display: flex; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
-        .result-title { font-size: 18px; font-weight: bold; color: #fff; flex: 1; }
-        .result-badge { background: rgba(43,166,64,0.15); color: var(--success-color); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; height: fit-content; white-space: nowrap; }
-        .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .meta-label { font-size: 12px; color: var(--text-gray); margin-bottom: 4px; text-transform: uppercase; }
-        .meta-value { font-size: 14px; color: #eee; font-weight: 500; }
-        .quality-badges { display: flex; flex-wrap: wrap; gap: 8px; }
-        .quality-badge { background: rgba(62,166,255,0.1); color: var(--primary-color); border: 1px solid rgba(62,166,255,0.3); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
-        .quality-badge.audio { border-color: var(--success-color); color: var(--success-color); background: rgba(43,166,64,0.1); }
-
-        /* --- 编辑器 (拖拽与列表修复) --- */
-        .editor-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--surface-color); padding: 10px; border-radius: 8px; flex-wrap: wrap; gap: 10px; }
-        .toolbar-group { display: flex; gap: 8px; }
-        .tool-btn { background: rgba(255,255,255,0.1); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .tool-btn.active { background: var(--primary-color); color: #000; font-weight: bold; }
-        .tool-btn.primary { background: var(--primary-color); color: #000; font-weight: bold; }
+        .navbar { height:64px; padding:0 20px; background:rgba(15,15,15,0.95); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; backdrop-filter:blur(10px); }
+        .menu-btn { background:none; border:none; color:white; font-size:24px; padding:5px; }
+        .app-title { font-size:20px; font-weight:700; background:linear-gradient(90deg,var(--primary),#a54aff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap; }
         
-        #codeEditor { width: 100%; height: 500px; background: #121212; color: #ddd; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; font-family: monospace; resize: vertical; white-space: pre; }
+        .lang-container { position:relative; z-index:101; }
+        .lang-btn { background:none; border:1px solid var(--border); color:white; padding:6px 12px; border-radius:20px; font-size:14px; display:flex; align-items:center; gap:6px; }
+        .lang-menu { position:absolute; top:120%; right:0; background:var(--surface); border:1px solid var(--border); border-radius:8px; width:160px; display:none; flex-direction:column; overflow:hidden; }
+        .lang-menu.active { display:flex; }
+        .lang-item { padding:12px; font-size:14px; color:#ddd; border-bottom:1px solid rgba(255,255,255,0.05); }
         
-        /* 列表模式样式 */
-        #visualEditor { list-style: none; padding: 0; display: none; }
-        .channel-item { background: var(--surface-color); border: 1px solid var(--border-color); margin-bottom: 8px; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; cursor: move; transition: 0.2s; }
-        .channel-item:hover { border-color: var(--primary-color); background: #252525; }
-        .channel-info { flex: 1; overflow: hidden; }
-        .ch-name { font-weight: bold; font-size: 15px; color: #fff; margin-bottom: 3px; }
-        .ch-url { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .drag-handle { color: #666; font-size: 20px; cursor: grab; padding: 5px; }
+        .sidebar { position:fixed; top:0; left:0; height:100%; width:260px; background:var(--surface); transform:translateX(-100%); transition:0.3s; z-index:200; display:flex; flex-direction:column; box-shadow:4px 0 15px rgba(0,0,0,0.5); }
+        .sidebar.active { transform:translateX(0); }
+        .sidebar-header { height:64px; display:flex; align-items:center; padding-left:20px; border-bottom:1px solid var(--border); font-weight:bold; color:var(--gray); }
+        .menu-item { padding:15px 20px; color:white; border-left:4px solid transparent; }
+        .menu-item.active { border-left-color:var(--primary); color:var(--primary); background:rgba(255,255,255,0.05); font-weight:bold; }
+        .overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); opacity:0; visibility:hidden; transition:0.3s; z-index:150; }
+        .overlay.active { opacity:1; visibility:visible; }
 
-        /* 网格模式样式 */
-        #gridEditor { display: none; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; padding-bottom: 80px; }
-        .grid-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; }
-        .grid-card.selected { border: 2px solid var(--primary-color); background: rgba(62,166,255,0.1); }
-        .card-img-box { width: 100%; height: 0; padding-bottom: 56.25%; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
-        .card-img { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; }
-        .card-placeholder { position: absolute; font-size: 24px; color: #444; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .card-info { padding: 10px; }
-        .card-tag { font-size: 10px; color: var(--primary-color); background: rgba(62,166,255,0.1); padding: 2px 5px; border-radius: 3px; display: inline-block; margin-bottom: 4px; }
-        .card-name { font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .check-circle { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,0.5); display: none; z-index: 10; }
-        .grid-card.selecting .check-circle { display: block; }
-        .grid-card.selected .check-circle { background: var(--primary-color); border-color: var(--primary-color); }
+        .main-container { flex:1; padding:20px; width:100%; max-width:900px; margin:0 auto; overflow-y:auto; padding-bottom:120px; }
+        .section-view { display:none; animation:fadeIn 0.3s; }
+        .section-view.active { display:block; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1} }
 
-        .batch-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #222; border-top: 2px solid var(--primary-color); padding: 15px; display: none; justify-content: space-between; align-items: center; z-index: 300; }
-        .upload-area { border: 2px dashed var(--border-color); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; margin-bottom: 20px; }
-        
-        /* 模态框 */
-        .modal-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: none; justify-content: center; align-items: center; }
-        .edit-modal { background: #252525; border-radius: 12px; width: 90%; max-width: 400px; padding: 20px; border: 1px solid var(--border-color); }
-        .form-input { width: 100%; background: #111; border: 1px solid #444; padding: 10px; color: white; border-radius: 6px; margin: 10px 0; }
-        
-        .format-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
-        .format-btn { background: var(--surface-color); border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; text-align: center; cursor: pointer; color: white; }
-        .format-btn:hover { border-color: var(--primary-color); background: rgba(62, 166, 255, 0.05); }
+        .section-title { font-size:22px; font-weight:700; margin:10px 0 15px; text-align:center; color:var(--primary); }
+        .tips-box { background:rgba(62,166,255,0.08); border:1px solid rgba(62,166,255,0.2); border-radius:8px; padding:18px; margin-bottom:25px; font-size:14px; color:#ccc; line-height:1.6; }
+        .tips-title { color:var(--primary); font-weight:bold; margin-bottom:8px; font-size:15px; display:flex; align-items:center; gap:8px; }
 
-        .check-item { background: var(--surface-color); border: 1px solid var(--border-color); margin-bottom: 8px; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .player-wrapper { width:100%; background:#000; border-radius:12px; position:relative; padding-top:56.25%; margin-bottom:15px; overflow:hidden; }
+        #video { position:absolute; top:0; left:0; width:100%; height:100%; }
+        .input-group { display:flex; margin-bottom:20px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+        .url-input { flex:1; background:var(--surface); border:none; padding:15px; color:white; font-size:15px; }
+        .play-btn { background:var(--primary); color:#000; border:none; padding:0 30px; font-weight:bold; }
+
+        .result-card { background:rgba(30,30,30,0.95); border:1px solid var(--border); border-left:5px solid var(--success); border-radius:12px; padding:20px; margin-top:20px; }
+        .result-thumb-box { width:100%; height:180px; background:#000; border-radius:8px; margin-bottom:15px; overflow:hidden; display:none; }
+        .result-thumb { width:100%; height:100%; object-fit:cover; opacity:0.9; }
+        .result-header { display:flex; gap:15px; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:15px; }
+        .result-badge { background:rgba(43,166,64,0.15); color:var(--success); padding:4px 10px; border-radius:6px; font-size:12px; font-weight:bold; white-space:nowrap; height:fit-content; }
+        .quality-badge { background:rgba(62,166,255,0.1); color:var(--primary); border:1px solid rgba(62,166,255,0.3); padding:5px 10px; border-radius:6px; font-size:12px; margin:2px; display:inline-block; }
+        .quality-badge.audio { border-color:var(--success); color:var(--success); background:rgba(43,166,64,0.1); }
+
+        .editor-toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:var(--surface); padding:10px; border-radius:8px; flex-wrap:wrap; gap:10px; }
+        .tool-btn { background:rgba(255,255,255,0.1); color:white; border:none; padding:8px 14px; border-radius:6px; font-size:13px; display:flex; align-items:center; gap:5px; }
+        .tool-btn.active { background:var(--primary); color:#000; font-weight:bold; }
+        #codeEditor { width:100%; height:500px; background:#121212; color:#ddd; border:1px solid var(--border); padding:15px; border-radius:8px; font-family:monospace; resize:vertical; white-space:pre; }
         
-        @media (max-width: 600px) { .batch-bar { flex-direction: column; gap: 10px; } }
+        #visualEditor { list-style:none; padding:0; display:none; }
+        .channel-item { background:var(--surface); border:1px solid var(--border); margin-bottom:8px; padding:12px 15px; border-radius:8px; display:flex; align-items:center; gap:15px; }
+        .drag-handle { color:#666; font-size:20px; padding:5px; }
+        
+        #gridEditor { display:none; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:12px; padding-bottom:80px; }
+        .grid-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; position:relative; }
+        .grid-card.selected { border:2px solid var(--primary); background:rgba(62,166,255,0.1); }
+        .card-img-box { width:100%; height:0; padding-bottom:56.25%; background:#000; position:relative; display:flex; align-items:center; justify-content:center; }
+        .card-img { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; }
+        .check-circle { position:absolute; top:5px; right:5px; width:20px; height:20px; border-radius:50%; border:2px solid #fff; background:rgba(0,0,0,0.5); display:none; z-index:10; }
+        .grid-card.selecting .check-circle { display:block; }
+        .grid-card.selected .check-circle { background:var(--primary); border-color:var(--primary); }
+
+        .batch-bar { position:fixed; bottom:0; left:0; width:100%; background:#222; border-top:2px solid var(--primary); padding:15px; display:none; justify-content:space-between; align-items:center; z-index:300; }
+        .upload-area { border:2px dashed var(--border); border-radius:12px; padding:40px; text-align:center; cursor:pointer; margin-bottom:20px; }
+        
+        .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; display:none; justify-content:center; align-items:center; }
+        .edit-modal { background:#252525; border-radius:12px; width:90%; max-width:400px; padding:20px; border:1px solid var(--border); }
+        .form-input { width:100%; background:#111; border:1px solid #444; padding:10px; color:white; border-radius:6px; margin:10px 0; }
+        .format-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin-top:20px; }
+        .format-btn { background:var(--surface); border:1px solid var(--border); padding:20px; border-radius:10px; text-align:center; color:white; }
     </style>
 </head>
 <body>
-
     <div class="batch-bar" id="batchBar">
         <div id="batchCount" style="color:white; font-weight:bold;">Selected: 0</div>
         <div style="display:flex; gap:10px; overflow-x:auto;">
             <button class="tool-btn" onclick="toggleSelectAll()" data-i18n="btn_select_all">Select All</button>
             <button class="tool-btn" onclick="openBatchEdit('group')" data-i18n="btn_edit_group">Group</button>
             <button class="tool-btn" onclick="openBatchEdit('logo')" data-i18n="btn_edit_logo">Logo</button>
-            <button class="tool-btn" style="color:var(--danger-color);" onclick="batchDelete()" data-i18n="btn_delete">Delete</button>
+            <button class="tool-btn" style="color:var(--danger);" onclick="batchDelete()" data-i18n="btn_delete">Delete</button>
             <button class="tool-btn" onclick="toggleBatchMode(false)" data-i18n="btn_exit">Exit</button>
         </div>
     </div>
 
     <div class="modal-bg" id="editModal">
         <div class="edit-modal">
-            <h3 id="editModalTitle" style="margin-top:0; color:var(--primary-color);" data-i18n="modal_edit_title">Edit</h3>
+            <h3 style="margin-top:0; color:var(--primary);" data-i18n="modal_edit_title">Edit</h3>
             <div id="dynamicForm"></div>
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
                 <button class="tool-btn" onclick="addNewProperty()" style="margin-right:auto;" data-i18n="btn_add_prop">+ Prop</button>
                 <button class="tool-btn" onclick="document.getElementById('editModal').style.display='none'" data-i18n="btn_cancel">Cancel</button>
-                <button class="tool-btn primary" onclick="saveChannelData()" data-i18n="btn_confirm">Confirm</button>
+                <button class="tool-btn active" onclick="saveChannelData()" data-i18n="btn_confirm">Confirm</button>
             </div>
         </div>
     </div>
@@ -174,7 +113,18 @@
             <input type="text" class="form-input" id="batchInput">
             <div style="display:flex; justify-content:flex-end; gap:10px;">
                 <button class="tool-btn" onclick="document.getElementById('batchInputModal').style.display='none'" data-i18n="btn_cancel">Cancel</button>
-                <button class="tool-btn primary" onclick="applyBatchEdit()" data-i18n="btn_confirm">Confirm</button>
+                <button class="tool-btn active" onclick="applyBatchEdit()" data-i18n="btn_confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="confirmModal">
+        <div class="edit-modal" style="text-align:center;">
+            <h3 data-i18n="modal_file_title">File Loaded</h3>
+            <p id="confirmText" style="margin:15px 0; color:#ccc;"></p>
+            <div style="display:flex; justify-content:center; gap:10px;">
+                <button class="tool-btn" onclick="closeConfirm(false)" data-i18n="btn_cancel">Cancel</button>
+                <button class="tool-btn active" onclick="closeConfirm(true)" data-i18n="btn_confirm">Confirm</button>
             </div>
         </div>
     </div>
@@ -182,77 +132,72 @@
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header" data-i18n="sidebar_title">TOOLBOX MENU</div>
-        <div class="menu-item active" onclick="switchTab('tester', this)"><span data-i18n="menu_tester">📺 Stream Tester</span></div>
-        <div class="menu-item" onclick="switchTab('capture', this)"><span data-i18n="menu_capture">🔗 Stream Capture</span></div>
-        <div class="menu-item" onclick="switchTab('editor', this)"><span data-i18n="menu_editor">📝 Playlist Editor</span></div>
-        <div class="menu-item" onclick="switchTab('checker', this)"><span data-i18n="menu_checker">📡 Stream Checker</span></div>
-        <div class="menu-item" onclick="switchTab('converter', this)"><span data-i18n="menu_converter">🔄 Format Converter</span></div>
+        <div class="sidebar-header" data-i18n="sidebar_title">TOOLBOX</div>
+        <div class="menu-item active" onclick="switchTab('tester', this)"><span data-i18n="menu_tester">Stream Tester</span></div>
+        <div class="menu-item" onclick="switchTab('capture', this)"><span data-i18n="menu_capture">Stream Capture</span></div>
+        <div class="menu-item" onclick="switchTab('editor', this)"><span data-i18n="menu_editor">Playlist Editor</span></div>
+        <div class="menu-item" onclick="switchTab('checker', this)"><span data-i18n="menu_checker">Stream Checker</span></div>
+        <div class="menu-item" onclick="switchTab('converter', this)"><span data-i18n="menu_converter">Format Converter</span></div>
     </aside>
 
     <nav class="navbar">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
-        <div class="app-title" data-i18n="app_title">M3U/M3U8 Web Toolbox</div>
+        <div class="app-title" data-i18n="app_title">M3U8 Toolbox</div>
         <div class="lang-container">
-            <button class="lang-btn" onclick="toggleLangMenu()">
-                <span>🌐</span> <span id="currentLangLabel">CN</span>
-            </button>
+            <button class="lang-btn" onclick="toggleLangMenu()">🌐 <span id="currentLangLabel">CN</span></button>
             <div class="lang-menu" id="langMenu">
-                <div class="lang-item" onclick="changeLang('zh')"><span class="lang-flag">🇨🇳</span> 简体中文</div>
-                <div class="lang-item" onclick="changeLang('en')"><span class="lang-flag">🇺🇸</span> English</div>
-                <div class="lang-item" onclick="changeLang('ja')"><span class="lang-flag">🇯🇵</span> 日本語</div>
-                <div class="lang-item" onclick="changeLang('ko')"><span class="lang-flag">🇰🇷</span> 한국어</div>
-                <div class="lang-item" onclick="changeLang('ru')"><span class="lang-flag">🇷🇺</span> Русский</div>
-                <div class="lang-item" onclick="changeLang('de')"><span class="lang-flag">🇩🇪</span> Deutsch</div>
-                <div class="lang-item" onclick="changeLang('fr')"><span class="lang-flag">🇫🇷</span> Français</div>
-                <div class="lang-item" onclick="changeLang('es')"><span class="lang-flag">🇪🇸</span> Español</div>
-                <div class="lang-item" onclick="changeLang('pt')"><span class="lang-flag">🇧🇷</span> Português</div>
+                <div class="lang-item" onclick="changeLang('zh')">🇨🇳 简体中文</div>
+                <div class="lang-item" onclick="changeLang('en')">🇺🇸 English</div>
+                <div class="lang-item" onclick="changeLang('ja')">🇯🇵 日本語</div>
+                <div class="lang-item" onclick="changeLang('ko')">🇰🇷 한국어</div>
+                <div class="lang-item" onclick="changeLang('ru')">🇷🇺 Русский</div>
+                <div class="lang-item" onclick="changeLang('de')">🇩🇪 Deutsch</div>
+                <div class="lang-item" onclick="changeLang('fr')">🇫🇷 Français</div>
+                <div class="lang-item" onclick="changeLang('es')">🇪🇸 Español</div>
+                <div class="lang-item" onclick="changeLang('pt')">🇧🇷 Português</div>
             </div>
         </div>
     </nav>
 
     <main class="main-container">
         <div id="section-tester" class="section-view active">
-            <div class="section-title" data-i18n="title_tester">M3U/M3U8 链接测试</div>
+            <div class="section-title" data-i18n="title_tester">Stream Tester</div>
             <div class="tips-box">
-                <div class="tips-title" data-i18n="tips_title">💡 测试说明</div>
-                <span data-i18n="tips_tester_content">测试连通性。注意：失败通常由 CORS 跨域策略引起。</span>
+                <div class="tips-title" data-i18n="tips_title">💡 Guide</div>
+                <span data-i18n="tips_tester_content">Testing connectivity...</span>
             </div>
             <div class="input-group">
-                <input type="text" class="url-input" id="urlInput" placeholder="http://..." data-i18n-placeholder="placeholder_url">
+                <input type="text" class="url-input" id="urlInput" placeholder="http://...">
                 <button class="play-btn" id="playBtn" data-i18n="btn_play">PLAY</button>
             </div>
             <div class="player-wrapper"><video id="video" controls></video></div>
-            <div id="statusMsg" style="text-align:center; margin-top:10px; color:#888;">Ready</div>
+            <div id="statusMsg" style="text-align:center; color:#888;">Ready</div>
         </div>
 
         <div id="section-capture" class="section-view">
-            <div class="section-title" data-i18n="title_capture">在线视频捕捉 (yt-dlp)</div>
+            <div class="section-title" data-i18n="title_capture">Stream Capture</div>
             <div class="tips-box">
-                <div class="tips-title" data-i18n="tips_title">🛠️ 核心机制与局限性说明</div>
-                <span data-i18n="tips_capture_content">功能用途：基于 yt-dlp 核心，解析 M3U8 直播流。<br>建议：配合本地服务器以防风控。</span>
+                <div class="tips-title" data-i18n="tips_title">💡 Guide</div>
+                <span data-i18n="tips_capture_content">Extract M3U8 via yt-dlp...</span>
             </div>
             <div class="input-group">
-                <input type="text" class="url-input" id="captureInput" placeholder="https://..." data-i18n-placeholder="placeholder_url">
+                <input type="text" class="url-input" id="captureInput" placeholder="https://...">
                 <button class="play-btn" id="captureBtn" onclick="testCaptureUrl()" data-i18n="btn_test_link">TEST</button>
             </div>
-            <div id="captureLoading" class="capture-loading" style="display:none; text-align:center;">
-                <div class="spinner"></div>
-                <div style="color:#888; font-size:12px;" data-i18n="msg_analyzing">Analyzing...</div>
-            </div>
-            <div id="captureResult" class="capture-result"></div>
+            <div id="captureLoading" style="display:none; text-align:center; padding:20px;">Analyzing...</div>
+            <div id="captureResult"></div>
         </div>
 
         <div id="section-editor" class="section-view">
-            <div class="section-title" data-i18n="title_editor">直播源文件编辑</div>
+            <div class="section-title" data-i18n="title_editor">Playlist Editor</div>
             <div class="tips-box">
-                <div class="tips-title" data-i18n="tips_title">📝 编辑功能说明</div>
-                <span data-i18n="desc_editor">支持文本、列表、网格三种视图。列表支持拖拽，网格支持批量修改。</span>
+                <div class="tips-title" data-i18n="tips_title">💡 Guide</div>
+                <span data-i18n="desc_editor">Edit M3U lists...</span>
             </div>
             <div id="step-upload-editor">
                 <div class="upload-area" onclick="triggerUpload('editor')">
-                    <div style="font-size:32px; margin-bottom:10px;">📂</div>
-                    <p data-i18n="upload_text">点击选择或拖拽文件</p>
+                    <div style="font-size:32px;">📂</div>
+                    <p data-i18n="upload_text">Upload File</p>
                     <input type="file" id="fileInputEditor" hidden accept=".m3u,.txt">
                 </div>
             </div>
@@ -265,36 +210,33 @@
                     </div>
                     <div class="toolbar-group">
                         <button class="tool-btn" id="btnBatch" onclick="toggleBatchMode()" style="display:none;" data-i18n="btn_batch">Batch</button>
-                        <button class="tool-btn" id="btnAddTemplate" onclick="insertTemplate()" data-i18n="btn_add">Add</button>
-                        <button class="tool-btn primary" onclick="saveAndDownload()" data-i18n="btn_save">Save</button>
+                        <button class="tool-btn active" onclick="saveAndDownload()" data-i18n="btn_save">Save</button>
+                        <button class="tool-btn" style="color:var(--danger);" onclick="resetEditor()" data-i18n="btn_discard">Reset</button>
                     </div>
                 </div>
                 <textarea id="codeEditor" spellcheck="false"></textarea>
                 <ul id="visualEditor"></ul>
                 <div id="gridEditor"></div>
-                <div style="text-align:center; margin-top:30px;">
-                    <button onclick="resetEditor()" style="background:none; border:none; color:var(--danger-color); cursor:pointer;" data-i18n="btn_discard">Reset</button>
-                </div>
             </div>
         </div>
 
         <div id="section-checker" class="section-view">
-            <div class="section-title" data-i18n="title_checker">直播源检测</div>
+            <div class="section-title" data-i18n="title_checker">Stream Checker</div>
             <div class="tips-box">
-                <div class="tips-title" data-i18n="tips_title">📢 检测机制说明</div>
-                <span data-i18n="tips_checker_content">智能探测链接有效性。</span>
+                <div class="tips-title" data-i18n="tips_title">💡 Guide</div>
+                <span data-i18n="tips_checker_content">Check validity...</span>
             </div>
             <div id="step-upload-checker">
                 <div class="upload-area" onclick="triggerUpload('checker')">
-                    <div style="font-size:32px; margin-bottom:10px;">📡</div>
+                    <div style="font-size:32px;">📡</div>
                     <p data-i18n="upload_text">Upload File</p>
                     <input type="file" id="fileInputChecker" hidden>
                 </div>
             </div>
             <div id="step-check-ui" style="display:none;">
                 <div style="display:flex; gap:10px; margin-bottom:10px;">
-                    <div style="flex:1; background:#333; height:4px; border-radius:2px; align-self:center;"><div id="checkProgress" style="width:0%; background:var(--success-color); height:100%;"></div></div>
-                    <button class="tool-btn primary" id="btnCheckAll" onclick="startCheckAll()" data-i18n="btn_start_check">START</button>
+                    <div style="flex:1; background:#333; height:4px; align-self:center;"><div id="checkProgress" style="width:0%; background:var(--success); height:100%;"></div></div>
+                    <button class="tool-btn active" id="btnCheckAll" onclick="startCheckAll()" data-i18n="btn_start_check">START</button>
                 </div>
                 <div id="checkList" style="max-height:500px; overflow-y:auto;"></div>
                 <button class="tool-btn" onclick="resetChecker()" style="margin-top:15px; width:100%;" data-i18n="btn_reset">Reset</button>
@@ -302,570 +244,302 @@
         </div>
 
         <div id="section-converter" class="section-view">
-            <div class="section-title" data-i18n="title_converter">格式转换</div>
+            <div class="section-title" data-i18n="title_converter">Converter</div>
             <div class="tips-box">
-                <div class="tips-title" data-i18n="tips_title">💡 格式转换指南</div>
-                <span data-i18n="desc_converter">智能解析 M3U/TXT 格式。</span>
+                <div class="tips-title" data-i18n="tips_title">💡 Guide</div>
+                <span data-i18n="desc_converter">Convert formats...</span>
             </div>
             <div id="step-upload-converter">
                 <div class="upload-area" onclick="triggerUpload('converter')">
-                    <div style="font-size:32px; margin-bottom:10px;">🔄</div>
+                    <div style="font-size:32px;">🔄</div>
                     <p data-i18n="upload_text">Upload File</p>
                     <input type="file" id="fileInputConverter" hidden>
                 </div>
             </div>
-            <div id="step-convert-ui" style="display:none; text-align:center;">
-                <div id="convertStats" style="margin-bottom:20px; color:var(--primary-color);">Loaded</div>
+            <div id="step-convert-ui" style="display:none;">
                 <div class="format-grid">
-                    <div class="format-btn" onclick="doConvert('m3u')"><div class="fmt-icon">📄</div><div data-i18n="fmt_m3u_desc">M3U</div></div>
-                    <div class="format-btn" onclick="doConvert('txt')"><div class="fmt-icon">📝</div><div data-i18n="fmt_txt">TXT</div></div>
-                    <div class="format-btn" onclick="doConvert('tivimate')"><div class="fmt-icon">📺</div><div data-i18n="fmt_tivi_desc">TiviMate</div></div>
-                    <div class="format-btn" onclick="doConvert('json')"><div class="fmt-icon">⚙️</div><div data-i18n="fmt_json_desc">JSON</div></div>
+                    <div class="format-btn" onclick="doConvert('m3u')">M3U</div>
+                    <div class="format-btn" onclick="doConvert('txt')">TXT</div>
+                    <div class="format-btn" onclick="doConvert('tivimate')">TiviMate</div>
+                    <div class="format-btn" onclick="doConvert('json')">JSON</div>
                 </div>
-                <button class="tool-btn" onclick="resetConverter()" style="margin-top:20px;" data-i18n="btn_reupload">Back</button>
+                <button class="tool-btn" onclick="resetConverter()" style="margin-top:20px; width:100%;" data-i18n="btn_reupload">Back</button>
             </div>
         </div>
-
     </main>
 
-        <script>
-        // ==========================================
-        // 1. 全局配置与状态
-        // ==========================================
-        const API_BASE = "http://127.0.0.1:5000/api/check"; 
-        
+    <script>
+        const API_BASE = "http://127.0.0.1:5000/api/check";
         let currentLang = 'zh';
         
-        // 数据容器
-        let editorData = { buffer: '', name: 'playlist.m3u', channelData: [] };
-        let checkerData = { channels: [] };
-        let converterData = { channels: [], name: '' };
-        
-        // 交互状态
-        let isBatchMode = false;
-        let selectedIndices = new Set();
-        let currentUploadTarget = ''; 
-        let currentMode = 'text';
-        let currentBatchType = '';
-
-        // ==========================================
-        // 2. 完整多语言词典 (9国语言・详细旗舰版)
-        // ==========================================
         const i18nData = {
             "zh": {
-                "app_title": "M3U/M3U8 在线工具箱", "sidebar_title": "工具箱菜单",
-                "menu_tester": "📺 在线链接测试", "menu_capture": "🔗 在线网站捕捉测试", "menu_editor": "📝 直播源在线编辑", "menu_checker": "📡 直播源在线检测", "menu_converter": "🔄 直播源文件转换",
-                "title_tester": "M3U/M3U8 链接在线测试", "tips_tester_content": "此工具仅用于测试链接的<b>连通性</b>和<b>初始加载</b>。<br>注意：部分流媒体因 <b>CORS（跨域策略）</b> 限制可能无法在浏览器中播放。",
-                "title_capture": "在线网站捕捉测试 (yt-dlp)", "tips_capture_content": "<b>功能用途：</b>基于 yt-dlp 核心，测试能否从视频网站（YouTube, Twitch, 虎牙等）解析出 M3U8 直播流。<br><b>建议：</b>配合本地服务器使用以防风控。",
-                "title_editor": "直播源文件编辑", "desc_editor": "1. <b>操作模式</b>：提供“文本代码”、“可视化列表”和“网格资料”三种视图，支持拖拽排序。<br>2. <b>批量处理</b>：在网格模式下，点击右上角进入批量模式，可快速修改分组名称和台标。",
-                "title_checker": "直播源在线检测", "tips_checker_content": "1. <b>智能探测</b>：自动使用“混合探测模式”。<br>2. <b>⚠️ 可能有效</b>：黄色状态表示服务器连通，但被浏览器拦截。<br>3. <b>❌ 无效</b>：连接拒绝或超时。",
-                "title_converter": "直播源文件转换", "desc_converter": "1. <b>智能解析</b>：系统会自动识别输入文件的格式（M3U/TXT）。<br>2. <b>TiviMate</b>：选择 TiviMate 格式时，会自动补充 <code>tvg-id</code>。<br>3. <b>通用性</b>：TXT 格式为“频道名,链接”结构。",
-                "upload_text": "点击选择或拖拽文件", "btn_select_file": "选择文件", "btn_play": "播放", "status_ready": "准备就绪", "btn_test_link": "测试链接", "msg_analyzing": "正在云端分析中...",
-                "mode_text": "📄 文本", "mode_list": "☰ 列表", "mode_grid": "▦ 资料",
-                "btn_batch": "✅ 批量选择", "btn_add": "➕ 添加", "btn_save": "💾 保存", "btn_discard": "❌ 放弃修改", "btn_select_all": "🔁 全选",
-                "btn_edit_group": "改分组", "btn_edit_logo": "改Logo", "btn_delete": "删除", "btn_exit": "退出",
-                "upload_checker_text": "导入直播源文件进行检测", "btn_start_check": "▶ 开始全测", "btn_reset": "🔄 清空并重新导入",
-                "upload_converter_text": "导入任意格式直播源", "label_file_read": "📂 已读取文件", "label_channel_count": "共识别有效频道：", "label_select_format": "请选择目标格式：",
-                "fmt_m3u_desc": "标准格式，支持台标分组", "fmt_txt": "TXT 文本", "fmt_txt_desc": "简单逗号分隔", "fmt_json_desc": "开发人员通用数据格式", "fmt_tivi_desc": "优化版M3U，补全tvg-id",
-                "btn_reupload": "↩️ 返回重新上传", "batch_selected": "已选 0 个", "btn_cancel": "取消", "btn_confirm": "确定", "btn_add_prop": "+ 属性",
-                "status_valid": "✅ 解析成功", "status_invalid": "❌ 解析失败", "err_network": "网络或API错误",
-                "lbl_source": "来源", "lbl_duration": "时长", "lbl_quality": "可用画质/格式", "lbl_raw": "原始流",
-                "modal_file_title": "文件处理", "modal_file_desc": "文件读取成功！是否继续？", "modal_batch_title": "批量修改", "modal_edit_title": "编辑资料"
+                "tips_title": "💡 功能说明", "app_title": "M3U/M3U8工具箱", "sidebar_title": "菜单",
+                "menu_tester": "📺 播放测试", "menu_capture": "🔗 捕捉测试", "menu_editor": "📝 列表编辑", "menu_checker": "📡 有效性检测", "menu_converter": "🔄 格式转换",
+                "title_tester": "M3U/M3U8 播放测试", "tips_tester_content": "测试链接连通性。注意跨域限制。",
+                "title_capture": "在线捕捉 (yt-dlp)", "tips_capture_content": "解析 YouTube/Bilibili 直播流。建议本地部署后端。",
+                "title_editor": "直播源编辑", "desc_editor": "支持文本、列表（可拖拽）、网格（批量）模式。",
+                "title_checker": "有效性检测", "tips_checker_content": "批量检测直播源连通性。",
+                "title_converter": "格式转换", "desc_converter": "支持 M3U/TXT/JSON 互转。",
+                "btn_play": "播放", "btn_test_link": "测试链接", "btn_select_file": "选择文件", "upload_text": "点击上传文件",
+                "mode_text": "文本", "mode_list": "列表", "mode_grid": "网格", "btn_batch": "批量选择", "btn_save": "保存下载", "btn_discard": "重置",
+                "btn_select_all": "全选", "btn_edit_group": "改分组", "btn_edit_logo": "改Logo", "btn_delete": "删除", "btn_exit": "退出",
+                "btn_start_check": "开始检测", "btn_reset": "重置", "btn_reupload": "重新上传", "btn_cancel": "取消", "btn_confirm": "确定", "btn_add_prop": "+ 属性",
+                "status_valid": "✅ 解析成功", "status_invalid": "❌ 解析失败", "err_network": "网络错误",
+                "modal_file_title": "文件已读取", "modal_file_desc": "文件解析成功，是否加载？", "modal_batch_title": "批量修改", "modal_edit_title": "编辑属性"
             },
             "en": {
-                "app_title": "M3U/M3U8 Web Toolbox", "sidebar_title": "Toolbox Menu",
-                "menu_tester": "📺 Stream Tester", "menu_capture": "🔗 Stream Capture", "menu_editor": "📝 Playlist Editor", "menu_checker": "📡 Stream Checker", "menu_converter": "🔄 Converter",
-                "title_tester": "Stream Tester", "tips_tester_content": "Testing for <b>connectivity</b> only.<br>Note: Failures may be due to <b>CORS</b> restrictions on the source server.",
-                "title_capture": "Stream Capture (yt-dlp)", "tips_capture_content": "<b>Use:</b> Extract M3U8/Direct links from sites (YouTube, Twitch, etc).<br><b>Tip:</b> Use local server for best results.",
-                "title_editor": "Playlist Editor", "desc_editor": "1. <b>Views</b>: Text, List, Grid.<br>2. <b>Batch</b>: Edit groups/logos in Grid view.",
-                "title_checker": "Stream Checker", "tips_checker_content": "1. <b>Smart Probe</b>: Retries with 'No-CORS'.<br>2. <b>⚠️ Likely Valid</b>: Server reachable but blocked by browser.<br>3. <b>❌ Invalid</b>: Connection refused.",
-                "title_converter": "Format Converter", "desc_converter": "1. <b>Smart Parse</b>: Auto-detects M3U/TXT.<br>2. <b>TiviMate</b>: Adds <code>tvg-id</code>.<br>3. <b>TXT</b>: 'Name,URL' format.",
-                "upload_text": "Click or Drag File", "btn_select_file": "Select File", "btn_play": "Play", "status_ready": "Ready", "btn_test_link": "Test Link", "msg_analyzing": "Analyzing...",
-                "mode_text": "📄 Text", "mode_list": "☰ List", "mode_grid": "▦ Grid",
-                "btn_batch": "✅ Batch", "btn_add": "➕ Add", "btn_save": "💾 Save", "btn_discard": "❌ Discard", "btn_select_all": "🔁 All",
-                "btn_edit_group": "Group", "btn_edit_logo": "Logo", "btn_delete": "Delete", "btn_exit": "Exit",
-                "upload_checker_text": "Import Playlist", "btn_start_check": "▶ Start", "btn_reset": "🔄 Reset",
-                "upload_converter_text": "Import File", "label_file_read": "📂 Loaded", "label_channel_count": "Channels:", "label_select_format": "Target Format:",
-                "fmt_m3u_desc": "Standard M3U", "fmt_txt": "TXT File", "fmt_txt_desc": "Comma separated", "fmt_json_desc": "JSON Data", "fmt_tivi_desc": "For TiviMate",
-                "btn_reupload": "↩️ Re-upload", "batch_selected": "Selected 0", "btn_cancel": "Cancel", "btn_confirm": "Confirm", "btn_add_prop": "+ Prop",
+                "tips_title": "💡 Guide", "app_title": "M3U8 Toolbox", "sidebar_title": "MENU",
+                "menu_tester": "📺 Tester", "menu_capture": "🔗 Capture", "menu_editor": "📝 Editor", "menu_checker": "📡 Checker", "menu_converter": "🔄 Converter",
+                "title_tester": "Stream Tester", "tips_tester_content": "Check connectivity. Note CORS limits.",
+                "title_capture": "Stream Capture", "tips_capture_content": "Extract streams via yt-dlp.",
+                "title_editor": "Playlist Editor", "desc_editor": "Text, List (Drag), Grid (Batch) modes.",
+                "title_checker": "Stream Checker", "tips_checker_content": "Batch check validity.",
+                "title_converter": "Converter", "desc_converter": "Convert M3U/TXT/JSON.",
+                "btn_play": "PLAY", "btn_test_link": "TEST", "btn_select_file": "Select File", "upload_text": "Upload File",
+                "mode_text": "Text", "mode_list": "List", "mode_grid": "Grid", "btn_batch": "Batch", "btn_save": "Save", "btn_discard": "Reset",
+                "btn_select_all": "Select All", "btn_edit_group": "Group", "btn_edit_logo": "Logo", "btn_delete": "Delete", "btn_exit": "Exit",
+                "btn_start_check": "Start", "btn_reset": "Reset", "btn_reupload": "Back", "btn_cancel": "Cancel", "btn_confirm": "Confirm", "btn_add_prop": "+ Prop",
                 "status_valid": "✅ Success", "status_invalid": "❌ Failed", "err_network": "Network Error",
-                "lbl_source": "Source", "lbl_duration": "Duration", "lbl_quality": "Quality", "lbl_raw": "Raw",
-                "modal_file_title": "File Loaded", "modal_file_desc": "Proceed?", "modal_batch_title": "Batch Edit", "modal_edit_title": "Edit Channel"
+                "modal_file_title": "File Loaded", "modal_file_desc": "Load file content?", "modal_batch_title": "Batch Edit", "modal_edit_title": "Edit"
             },
-            "ja": {
-                "app_title": "M3U/M3U8 ツールボックス", "sidebar_title": "メニュー",
-                "menu_tester": "📺 リンクテスト", "menu_capture": "🔗 キャプチャテスト", "menu_editor": "📝 編集ツール", "menu_checker": "📡 一括チェッカー", "menu_converter": "🔄 形式変換",
-                "title_tester": "ストリームテスト", "tips_tester_content": "リンクの<b>接続性</b>をテストします。<br>注意：<b>CORS</b>制限により再生できない場合があります。",
-                "title_capture": "サイトキャプチャ (yt-dlp)", "tips_capture_content": "<b>用途:</b> 動画サイトからM3U8を抽出。<br><b>推奨:</b> ローカル環境（Termux等）での実行を推奨。",
-                "title_editor": "プレイリスト編集", "desc_editor": "1. <b>モード</b>: テキスト/リスト/グリッド。<br>2. <b>一括</b>: グリッドで一括編集。",
-                "title_checker": "リンクチェッカー", "tips_checker_content": "1. <b>スマート検出</b>: No-CORS再試行。<br>2. <b>⚠️ 可能性あり</b>: ブラウザ制限。<br>3. <b>❌ 無効</b>: 接続拒否。",
-                "title_converter": "フォーマット変換", "desc_converter": "1. <b>自動認識</b>: M3U/TXT。<br>2. <b>TiviMate</b>: <code>tvg-id</code>補完。<br>3. <b>TXT</b>: カンマ区切り。",
-                "upload_text": "ファイルを選択", "btn_select_file": "選択", "btn_play": "再生", "status_ready": "準備完了", "btn_test_link": "テスト", "msg_analyzing": "解析中...",
-                "mode_text": "📄 テキスト", "mode_list": "☰ リスト", "mode_grid": "▦ グリッド",
-                "btn_batch": "✅ 選択", "btn_add": "➕ 追加", "btn_save": "💾 保存", "btn_discard": "❌ 破棄", "btn_select_all": "🔁 全選択",
-                "btn_edit_group": "グループ", "btn_edit_logo": "ロゴ", "btn_delete": "削除", "btn_exit": "終了",
-                "upload_checker_text": "ファイルをインポート", "btn_start_check": "▶ 開始", "btn_reset": "🔄 リセット",
-                "upload_converter_text": "ファイルをインポート", "label_file_read": "📂 完了", "label_channel_count": "チャンネル数：", "label_select_format": "変換形式：",
-                "fmt_m3u_desc": "標準形式", "fmt_txt": "TXT テキスト", "fmt_txt_desc": "カンマ区切り", "fmt_json_desc": "JSON", "fmt_tivi_desc": "TiviMate用",
-                "btn_reupload": "↩️ 再アップロード", "batch_selected": "選択 0", "btn_cancel": "キャンセル", "btn_confirm": "確定", "btn_add_prop": "+ 属性",
-                "status_valid": "✅ 成功", "status_invalid": "❌ 失敗", "err_network": "ネットワークエラー",
-                "lbl_source": "ソース", "lbl_duration": "時間", "lbl_quality": "画質/形式", "lbl_raw": "Raw流",
-                "modal_file_title": "確認", "modal_file_desc": "続行しますか？", "modal_batch_title": "一括編集", "modal_edit_title": "詳細編集"
-            },
-            "ko": {
-                "app_title": "M3U/M3U8 웹 도구 상자", "sidebar_title": "메뉴", "menu_tester": "📺 스트림 테스터", "menu_capture": "🔗 캡처 테스트", "menu_editor": "📝 에디터", "menu_checker": "📡 체커", "menu_converter": "🔄 변환기", "title_tester": "스트림 연결 테스트", "tips_tester_content": "링크의 <b>연결성</b> 테스트.<br>참고: <b>CORS</b> 제한으로 재생 불가할 수 있음.", "title_capture": "사이트 캡처 (yt-dlp)", "tips_capture_content": "<b>용도:</b> 사이트에서 M3U8 추출.<br><b>팁:</b> 로컬 배포 권장.", "title_editor": "플레이리스트 에디터", "desc_editor": "1. <b>모드</b>: 텍스트/리스트/그리드.<br>2. <b>일괄</b>: 그리드 일괄 편집.", "title_checker": "스트림 체커", "tips_checker_content": "1. <b>스마트 감지</b>: No-CORS 재시도.<br>2. <b>⚠️ 가능성</b>: 브라우저 차단.<br>3. <b>❌ 무효</b>: 연결 거부.", "title_converter": "포맷 변환기", "desc_converter": "1. <b>자동 감지</b>: M3U/TXT.<br>2. <b>TiviMate</b>: id 추가.<br>3. <b>TXT</b>: 쉼표 구분.", "upload_text": "파일 선택", "btn_select_file": "선택", "btn_play": "재생", "status_ready": "준비 완료", "btn_test_link": "테스트", "msg_analyzing": "분석 중...", "mode_text": "📄 텍스트", "mode_list": "☰ 리스트", "mode_grid": "▦ 그리드", "btn_batch": "✅ 선택", "btn_add": "➕ 추가", "btn_save": "💾 저장", "btn_discard": "❌ 취소", "btn_select_all": "🔁 전체", "btn_edit_group": "그룹", "btn_edit_logo": "로고", "btn_delete": "삭제", "btn_exit": "종료", "upload_checker_text": "파일 가져오기", "btn_start_check": "▶ 시작", "btn_reset": "🔄 초기화", "upload_converter_text": "파일 가져오기", "label_file_read": "📂 로드됨", "label_channel_count": "채널 수:", "label_select_format": "형식:", "fmt_m3u_desc": "표준", "fmt_txt": "TXT 파일", "fmt_txt_desc": "쉼표 구분", "fmt_json_desc": "JSON", "fmt_tivi_desc": "TiviMate용", "btn_reupload": "↩️ 재업로드", "batch_selected": "선택됨 0", "btn_cancel": "취소", "btn_confirm": "확인", "btn_add_prop": "+ 속성", "status_valid": "✅ 성공", "status_invalid": "❌ 실패", "err_network": "오류", "lbl_source": "소스", "lbl_duration": "시간", "lbl_quality": "화질", "lbl_raw": "원본", "modal_file_title": "확인", "modal_file_desc": "계속?", "modal_batch_title": "일괄 편집", "modal_edit_title": "채널 편집"
-            },
-            "ru": {
-                "app_title": "M3U/M3U8 Инструменты", "sidebar_title": "Меню", "menu_tester": "📺 Тест стрима", "menu_capture": "🔗 Захват стрима", "menu_editor": "📝 Редактор", "menu_checker": "📡 Проверка", "menu_converter": "🔄 Конвертер", "title_tester": "Тестер ссылок", "tips_tester_content": "Проверка <b>доступности</b>.<br>Ошибка может быть из-за <b>CORS</b>.", "title_capture": "Захват стрима (yt-dlp)", "tips_capture_content": "<b>Цель:</b> извлечение M3U8.<br><b>Совет:</b> Используйте локальный сервер.", "title_editor": "Редактор плейлистов", "desc_editor": "1. <b>Виды</b>: Текст/Список/Сетка.<br>2. <b>Пакетно</b>: Редактирование в Сетке.", "title_checker": "Проверка ссылок", "tips_checker_content": "1. <b>Умно</b>: Повтор No-CORS.<br>2. <b>⚠️ Вероятно</b>: Блок браузером.<br>3. <b>❌ Недоступно</b>: Ошибка.", "title_converter": "Конвертер", "desc_converter": "1. <b>Авто</b>: M3U/TXT.<br>2. <b>TiviMate</b>: Добавляет id.<br>3. <b>TXT</b>: Формат 'Имя,URL'.", "upload_text": "Выберите файл", "btn_select_file": "Выбрать", "btn_play": "Пуск", "status_ready": "Готов", "btn_test_link": "Тест", "msg_analyzing": "Анализ...", "mode_text": "📄 Текст", "mode_list": "☰ Список", "mode_grid": "▦ Сетка", "btn_batch": "✅ Пакетно", "btn_add": "➕ Добавить", "btn_save": "💾 Сохр.", "btn_discard": "❌ Отмена", "btn_select_all": "🔁 Все", "btn_edit_group": "Группа", "btn_edit_logo": "Лого", "btn_delete": "Удалить", "btn_exit": "Выход", "upload_checker_text": "Импорт", "btn_start_check": "▶ Старт", "btn_reset": "🔄 Сброс", "upload_converter_text": "Импорт", "label_file_read": "📂 Загружено", "label_channel_count": "Каналов:", "label_select_format": "Формат:", "fmt_m3u_desc": "Стандарт", "fmt_txt": "TXT файл", "fmt_txt_desc": "Запятая", "fmt_json_desc": "JSON", "fmt_tivi_desc": "TiviMate", "btn_reupload": "↩️ Заново", "batch_selected": "Выбрано 0", "btn_cancel": "Отмена", "btn_confirm": "ОК", "btn_add_prop": "+ Св-во", "status_valid": "✅ Успех", "status_invalid": "❌ Ошибка", "err_network": "Ошибка", "lbl_source": "Источник", "lbl_duration": "Время", "lbl_quality": "Качество", "lbl_raw": "Raw", "modal_file_title": "Загружено", "modal_file_desc": "Продолжить?", "modal_batch_title": "Пакетное", "modal_edit_title": "Ред. канала"
-            },
-            "de": {
-                "app_title": "M3U/M3U8 Web-Toolbox", "sidebar_title": "Menü", "menu_tester": "📺 Stream-Tester", "menu_capture": "🔗 Stream-Capture", "menu_editor": "📝 Editor", "menu_checker": "📡 Checker", "menu_converter": "🔄 Konverter", "title_tester": "Stream-Tester", "tips_tester_content": "Testet <b>Erreichbarkeit</b>.<br>Fehler oft durch <b>CORS</b>.", "title_capture": "Stream-Capture (yt-dlp)", "tips_capture_content": "<b>Nutzen:</b> M3U8 Extraktion.<br><b>Tipp:</b> Lokaler Server empfohlen.", "title_editor": "Playlist-Editor", "desc_editor": "1. <b>Modi</b>: Text/Liste/Raster.<br>2. <b>Batch</b>: Massenbearbeitung.", "title_checker": "Stream-Checker", "tips_checker_content": "1. <b>Smart</b>: No-CORS.<br>2. <b>⚠️ Evtl</b>: Browser blockt.<br>3. <b>❌ Ungültig</b>: Fehler.", "title_converter": "Konverter", "desc_converter": "1. <b>Auto</b>: M3U/TXT.<br>2. <b>TiviMate</b>: Plus id.<br>3. <b>TXT</b>: 'Name,URL'.", "upload_text": "Datei wählen", "btn_select_file": "Wählen", "btn_play": "Start", "status_ready": "Bereit", "btn_test_link": "Testen", "msg_analyzing": "Analysiere...", "mode_text": "📄 Text", "mode_list": "☰ Liste", "mode_grid": "▦ Raster", "btn_batch": "✅ Batch", "btn_add": "➕ Neu", "btn_save": "💾 Speichern", "btn_discard": "❌ Verwerfen", "btn_select_all": "🔁 Alle", "btn_edit_group": "Gruppe", "btn_edit_logo": "Logo", "btn_delete": "Löschen", "btn_exit": "Ende", "upload_checker_text": "Import", "btn_start_check": "▶ Start", "btn_reset": "🔄 Reset", "upload_converter_text": "Import", "label_file_read": "📂 Geladen", "label_channel_count": "Kanäle:", "label_select_format": "Format:", "fmt_m3u_desc": "Standard", "fmt_txt": "TXT Datei", "fmt_txt_desc": "Komma", "fmt_json_desc": "JSON", "fmt_tivi_desc": "TiviMate", "btn_reupload": "↩️ Neu", "batch_selected": "Gewählt 0", "btn_cancel": "Abbruch", "btn_confirm": "OK", "btn_add_prop": "+ Eigenschaft", "status_valid": "✅ Erfolg", "status_invalid": "❌ Fehler", "err_network": "Netzwerk", "lbl_source": "Quelle", "lbl_duration": "Dauer", "lbl_quality": "Qualität", "lbl_raw": "Raw", "modal_file_title": "Geladen", "modal_file_desc": "Weiter?", "modal_batch_title": "Batch", "modal_edit_title": "Bearbeiten"
-            },
-            "fr": {
-                "app_title": "Boîte à outils M3U", "sidebar_title": "Menu", "menu_tester": "📺 Testeur", "menu_capture": "🔗 Capture", "menu_editor": "📝 Éditeur", "menu_checker": "📡 Vérificateur", "menu_converter": "🔄 Convertisseur", "title_tester": "Testeur flux", "tips_tester_content": "Teste la <b>connectivité</b>.<br>Échecs souvent dus à <b>CORS</b>.", "title_capture": "Capture flux", "tips_capture_content": "<b>Usage:</b> Extrait M3U8.<br><b>Astuce:</b> Serveur local recommandé.", "title_editor": "Éditeur", "desc_editor": "1. <b>Vues</b>: Texte/Liste/Grille.<br>2. <b>Lot</b>: Modif en lot.", "title_checker": "Vérificateur", "tips_checker_content": "1. <b>Smart</b>: No-CORS.<br>2. <b>⚠️ Probable</b>: Bloqué nav.<br>3. <b>❌ Invalide</b>: Refusé.", "title_converter": "Convertisseur", "desc_converter": "1. <b>Auto</b>: M3U/TXT.<br>2. <b>TiviMate</b>: Ajout id.<br>3. <b>TXT</b>: 'Nom,URL'.", "upload_text": "Fichier", "btn_select_file": "Choisir", "btn_play": "Lire", "status_ready": "Prêt", "btn_test_link": "Tester", "msg_analyzing": "Analyse...", "mode_text": "📄 Texte", "mode_list": "☰ Liste", "mode_grid": "▦ Grille", "btn_batch": "✅ Lot", "btn_add": "➕ Ajout", "btn_save": "💾 Sauv.", "btn_discard": "❌ Annuler", "btn_select_all": "🔁 Tout", "btn_edit_group": "Groupe", "btn_edit_logo": "Logo", "btn_delete": "Suppr.", "btn_exit": "Quitter", "upload_checker_text": "Importer", "btn_start_check": "▶ Début", "btn_reset": "🔄 Reset", "upload_converter_text": "Importer", "label_file_read": "📂 Chargé", "label_channel_count": "Chaînes:", "label_select_format": "Format:", "fmt_m3u_desc": "Standard", "fmt_txt": "TXT", "fmt_txt_desc": "Virgules", "fmt_json_desc": "JSON", "fmt_tivi_desc": "TiviMate", "btn_reupload": "↩️ Recharger", "batch_selected": "Sélection 0", "btn_cancel": "Annuler", "btn_confirm": "OK", "btn_add_prop": "+ Prop", "status_valid": "✅ Succès", "status_invalid": "❌ Échec", "err_network": "Erreur", "lbl_source": "Source", "lbl_duration": "Durée", "lbl_quality": "Qualité", "lbl_raw": "Brut", "modal_file_title": "Chargé", "modal_file_desc": "Continuer ?", "modal_batch_title": "Lot", "modal_edit_title": "Éditer"
-            },
-            "es": {
-                "app_title": "Herramientas M3U", "sidebar_title": "Menú", "menu_tester": "📺 Probador", "menu_capture": "🔗 Captura", "menu_editor": "📝 Editor", "menu_checker": "📡 Verificador", "menu_converter": "🔄 Convertidor", "title_tester": "Probador Stream", "tips_tester_content": "Prueba <b>conectividad</b>.<br>Fallos por <b>CORS</b>.", "title_capture": "Captura", "tips_capture_content": "<b>Uso:</b> Extrae M3U8.<br><b>Tip:</b> Servidor local.", "title_editor": "Editor", "desc_editor": "1. <b>Vistas</b>: Texto/Lista/Grilla.<br>2. <b>Lote</b>: Edición lote.", "title_checker": "Verificador", "tips_checker_content": "1. <b>Smart</b>: No-CORS.<br>2. <b>⚠️ Probable</b>: Bloqueo nav.<br>3. <b>❌ Inválido</b>: Rechazado.", "title_converter": "Convertidor", "desc_converter": "1. <b>Auto</b>: M3U/TXT.<br>2. <b>TiviMate</b>: Añade id.<br>3. <b>TXT</b>: 'Nombre,URL'.", "upload_text": "Archivo", "btn_select_file": "Elegir", "btn_play": "Reprod.", "status_ready": "Listo", "btn_test_link": "Probar", "msg_analyzing": "Analizando...", "mode_text": "📄 Texto", "mode_list": "☰ Lista", "mode_grid": "▦ Grilla", "btn_batch": "✅ Lote", "btn_add": "➕ Añadir", "btn_save": "💾 Guardar", "btn_discard": "❌ Descartar", "btn_select_all": "🔁 Todos", "btn_edit_group": "Grupo", "btn_edit_logo": "Logo", "btn_delete": "Borrar", "btn_exit": "Salir", "upload_checker_text": "Importar", "btn_start_check": "▶ Iniciar", "btn_reset": "🔄 Reset", "upload_converter_text": "Importar", "label_file_read": "📂 Cargado", "label_channel_count": "Canales:", "label_select_format": "Formato:", "fmt_m3u_desc": "Estándar", "fmt_txt": "TXT", "fmt_txt_desc": "Comas", "fmt_json_desc": "JSON", "fmt_tivi_desc": "TiviMate", "btn_reupload": "↩️ Resubir", "batch_selected": "Sel. 0", "btn_cancel": "Cancelar", "btn_confirm": "OK", "btn_add_prop": "+ Prop", "status_valid": "✅ Éxito", "status_invalid": "❌ Fallo", "err_network": "Error", "lbl_source": "Fuente", "lbl_duration": "Duración", "lbl_quality": "Calidad", "lbl_raw": "Crudo", "modal_file_title": "Cargado", "modal_file_desc": "¿Seguir?", "modal_batch_title": "Lote", "modal_edit_title": "Editar"
-            },
-            "pt": {
-                "app_title": "Ferramentas M3U", "sidebar_title": "Menu", "menu_tester": "📺 Testador", "menu_capture": "🔗 Captura", "menu_editor": "📝 Editor", "menu_checker": "📡 Verificador", "menu_converter": "🔄 Conversor", "title_tester": "Testador", "tips_tester_content": "Testa <b>conectividade</b>.<br>Falhas por <b>CORS</b>.", "title_capture": "Captura", "tips_capture_content": "<b>Uso:</b> Extrai M3U8.<br><b>Dica:</b> Servidor local.", "title_editor": "Editor", "desc_editor": "1. <b>Vistas</b>: Texto/Lista/Grade.<br>2. <b>Lote</b>: Edição lote.", "title_checker": "Verificador", "tips_checker_content": "1. <b>Smart</b>: Retentativa No-CORS.<br>2. <b>⚠️ Provável</b>: Bloq. nav.<br>3. <b>❌ Inválido</b>: Recusado.", "title_converter": "Conversor", "desc_converter": "1. <b>Auto</b>: M3U/TXT.<br>2. <b>TiviMate</b>: Adic. id.<br>3. <b>TXT</b>: 'Nome,URL'.", "upload_text": "Arquivo", "btn_select_file": "Selecionar", "btn_play": "Tocar", "status_ready": "Pronto", "btn_test_link": "Testar", "msg_analyzing": "Analisando...", "mode_text": "📄 Texto", "mode_list": "☰ Lista", "mode_grid": "▦ Grade", "btn_batch": "✅ Lote", "btn_add": "➕ Adic.", "btn_save": "💾 Salvar", "btn_discard": "❌ Descartar", "btn_select_all": "🔁 Todos", "btn_edit_group": "Grupo", "btn_edit_logo": "Logo", "btn_delete": "Apagar", "btn_exit": "Sair", "upload_checker_text": "Importar", "btn_start_check": "▶ Iniciar", "btn_reset": "🔄 Reset", "upload_converter_text": "Importar", "label_file_read": "📂 Carregado", "label_channel_count": "Canais:", "label_select_format": "Formato:", "fmt_m3u_desc": "Padrão", "fmt_txt": "TXT", "fmt_txt_desc": "Vírgula", "fmt_json_desc": "JSON", "fmt_tivi_desc": "TiviMate", "btn_reupload": "↩️ Reenviar", "batch_selected": "Sel. 0", "btn_cancel": "Cancelar", "btn_confirm": "OK", "btn_add_prop": "+ Prop", "status_valid": "✅ Sucesso", "status_invalid": "❌ Falha", "err_network": "Erro", "lbl_source": "Fonte", "lbl_duration": "Duração", "lbl_quality": "Qualidade", "lbl_raw": "Bruto", "modal_file_title": "Carregado", "modal_file_desc": "Continuar?", "modal_batch_title": "Lote", "modal_edit_title": "Editar"
-            }
+            "ja": { "tips_title": "💡 ガイド", "app_title": "M3U8ツール", "sidebar_title": "メニュー", "menu_tester": "📺 テスト", "menu_capture": "🔗 キャプチャ", "menu_editor": "📝 編集", "menu_checker": "📡 検出", "menu_converter": "🔄 変換", "title_tester": "再生テスト", "tips_tester_content": "接続確認。", "title_capture": "キャプチャ", "tips_capture_content": "ストリーム抽出。", "title_editor": "編集", "desc_editor": "テキスト/リスト/グリッド。", "title_checker": "検出", "tips_checker_content": "一括確認。", "title_converter": "変換", "desc_converter": "フォーマット変換。", "btn_play": "再生", "btn_test_link": "テスト", "upload_text": "ファイル選択", "mode_text": "テキスト", "mode_list": "リスト", "mode_grid": "グリッド", "btn_batch": "一括", "btn_save": "保存", "btn_discard": "リセット", "btn_select_all": "全選択", "btn_edit_group": "グループ", "btn_edit_logo": "ロゴ", "btn_delete": "削除", "btn_exit": "終了", "btn_start_check": "開始", "btn_reset": "リセット", "btn_reupload": "戻る", "btn_cancel": "取消", "btn_confirm": "確定", "btn_add_prop": "+属性", "status_valid": "✅ 成功", "status_invalid": "❌ 失敗", "err_network": "エラー", "modal_file_title": "確認", "modal_file_desc": "読み込みますか？", "modal_batch_title": "一括編集", "modal_edit_title": "編集" },
+            "ko": { "tips_title": "💡 가이드", "app_title": "M3U8 도구", "sidebar_title": "메뉴", "menu_tester": "📺 테스트", "menu_capture": "🔗 캡처", "menu_editor": "📝 편집", "menu_checker": "📡 확인", "menu_converter": "🔄 변환", "title_tester": "재생 테스트", "tips_tester_content": "연결 확인.", "title_capture": "캡처", "tips_capture_content": "스트림 추출.", "title_editor": "편집기", "desc_editor": "텍스트/리스트/그리드.", "title_checker": "체커", "tips_checker_content": "일괄 확인.", "title_converter": "변환기", "desc_converter": "포맷 변환.", "btn_play": "재생", "btn_test_link": "테스트", "upload_text": "파일 선택", "mode_text": "텍스트", "mode_list": "리스트", "mode_grid": "그리드", "btn_batch": "일괄", "btn_save": "저장", "btn_discard": "리셋", "btn_select_all": "전체", "btn_edit_group": "그룹", "btn_edit_logo": "로고", "btn_delete": "삭제", "btn_exit": "종료", "btn_start_check": "시작", "btn_reset": "리셋", "btn_reupload": "뒤로", "btn_cancel": "취소", "btn_confirm": "확인", "btn_add_prop": "+속성", "status_valid": "✅ 성공", "status_invalid": "❌ 실패", "err_network": "오류", "modal_file_title": "확인", "modal_file_desc": "로드합니까?", "modal_batch_title": "일괄 편집", "modal_edit_title": "편집" },
+            "ru": { "tips_title": "💡 Инфо", "app_title": "M3U8 Тулз", "sidebar_title": "Меню", "menu_tester": "📺 Тест", "menu_capture": "🔗 Захват", "menu_editor": "📝 Редактор", "menu_checker": "📡 Проверка", "menu_converter": "🔄 Конверт", "title_tester": "Тестер", "tips_tester_content": "Проверка связи.", "title_capture": "Захват", "tips_capture_content": "Извлечение потока.", "title_editor": "Редактор", "desc_editor": "Текст/Список/Сетка.", "title_checker": "Чекер", "tips_checker_content": "Массовая проверка.", "title_converter": "Конвертер", "desc_converter": "Смена формата.", "btn_play": "Пуск", "btn_test_link": "Тест", "upload_text": "Файл", "mode_text": "Текст", "mode_list": "Список", "mode_grid": "Сетка", "btn_batch": "Пакет", "btn_save": "Сохр.", "btn_discard": "Сброс", "btn_select_all": "Все", "btn_edit_group": "Группа", "btn_edit_logo": "Лого", "btn_delete": "Удалить", "btn_exit": "Выход", "btn_start_check": "Старт", "btn_reset": "Сброс", "btn_reupload": "Назад", "btn_cancel": "Отмена", "btn_confirm": "ОК", "btn_add_prop": "+Св-во", "status_valid": "✅ ОК", "status_invalid": "❌ Ошибка", "err_network": "Сеть", "modal_file_title": "Загружено", "modal_file_desc": "Открыть?", "modal_batch_title": "Пакет", "modal_edit_title": "Ред." },
+            "de": { "tips_title": "💡 Info", "app_title": "M3U8 Tools", "sidebar_title": "Menü", "menu_tester": "📺 Tester", "menu_capture": "🔗 Capture", "menu_editor": "📝 Editor", "menu_checker": "📡 Checker", "menu_converter": "🔄 Konverter", "title_tester": "Stream-Test", "tips_tester_content": "Verbindungstest.", "title_capture": "Stream-Capture", "tips_capture_content": "Stream extrahieren.", "title_editor": "Playlist-Editor", "desc_editor": "Text/Liste/Raster.", "title_checker": "Stream-Checker", "tips_checker_content": "Massenprüfung.", "title_converter": "Konverter", "desc_converter": "Format ändern.", "btn_play": "Start", "btn_test_link": "Test", "upload_text": "Datei", "mode_text": "Text", "mode_list": "Liste", "mode_grid": "Raster", "btn_batch": "Batch", "btn_save": "Speichern", "btn_discard": "Reset", "btn_select_all": "Alle", "btn_edit_group": "Gruppe", "btn_edit_logo": "Logo", "btn_delete": "Löschen", "btn_exit": "Ende", "btn_start_check": "Start", "btn_reset": "Reset", "btn_reupload": "Zurück", "btn_cancel": "Abbruch", "btn_confirm": "OK", "btn_add_prop": "+Eig.", "status_valid": "✅ Erfolg", "status_invalid": "❌ Fehler", "err_network": "Netzwerk", "modal_file_title": "Geladen", "modal_file_desc": "Laden?", "modal_batch_title": "Batch", "modal_edit_title": "Edit" },
+            "fr": { "tips_title": "💡 Info", "app_title": "Outils M3U8", "sidebar_title": "Menu", "menu_tester": "📺 Testeur", "menu_capture": "🔗 Capture", "menu_editor": "📝 Éditeur", "menu_checker": "📡 Vérif", "menu_converter": "🔄 Convert", "title_tester": "Test Flux", "tips_tester_content": "Test connectivité.", "title_capture": "Capture", "tips_capture_content": "Extraction flux.", "title_editor": "Éditeur", "desc_editor": "Texte/Liste/Grille.", "title_checker": "Vérificateur", "tips_checker_content": "Vérif masse.", "title_converter": "Convertisseur", "desc_converter": "Conversion format.", "btn_play": "Lire", "btn_test_link": "Test", "upload_text": "Fichier", "mode_text": "Texte", "mode_list": "Liste", "mode_grid": "Grille", "btn_batch": "Lot", "btn_save": "Sauver", "btn_discard": "Reset", "btn_select_all": "Tout", "btn_edit_group": "Groupe", "btn_edit_logo": "Logo", "btn_delete": "Suppr.", "btn_exit": "Fin", "btn_start_check": "Début", "btn_reset": "Reset", "btn_reupload": "Retour", "btn_cancel": "Annuler", "btn_confirm": "OK", "btn_add_prop": "+Prop", "status_valid": "✅ Succès", "status_invalid": "❌ Échec", "err_network": "Erreur", "modal_file_title": "Chargé", "modal_file_desc": "Ouvrir ?", "modal_batch_title": "Lot", "modal_edit_title": "Éditer" },
+            "es": { "tips_title": "💡 Guía", "app_title": "Herramientas", "sidebar_title": "Menú", "menu_tester": "📺 Probador", "menu_capture": "🔗 Captura", "menu_editor": "📝 Editor", "menu_checker": "📡 Verif.", "menu_converter": "🔄 Convert.", "title_tester": "Probador", "tips_tester_content": "Prueba conec.", "title_capture": "Captura", "tips_capture_content": "Extraer stream.", "title_editor": "Editor", "desc_editor": "Texto/Lista/Grilla.", "title_checker": "Verificador", "tips_checker_content": "Verif. masiva.", "title_converter": "Convertidor", "desc_converter": "Convertir formato.", "btn_play": "Reprod.", "btn_test_link": "Probar", "upload_text": "Archivo", "mode_text": "Texto", "mode_list": "Lista", "mode_grid": "Grilla", "btn_batch": "Lote", "btn_save": "Guardar", "btn_discard": "Reset", "btn_select_all": "Todos", "btn_edit_group": "Grupo", "btn_edit_logo": "Logo", "btn_delete": "Borrar", "btn_exit": "Salir", "btn_start_check": "Inicio", "btn_reset": "Reset", "btn_reupload": "Volver", "btn_cancel": "Cancelar", "btn_confirm": "OK", "btn_add_prop": "+Prop", "status_valid": "✅ Éxito", "status_invalid": "❌ Fallo", "err_network": "Error", "modal_file_title": "Cargado", "modal_file_desc": "¿Abrir?", "modal_batch_title": "Lote", "modal_edit_title": "Editar" },
+            "pt": { "tips_title": "💡 Guia", "app_title": "Ferramentas", "sidebar_title": "Menu", "menu_tester": "📺 Testador", "menu_capture": "🔗 Captura", "menu_editor": "📝 Editor", "menu_checker": "📡 Verif.", "menu_converter": "🔄 Conver.", "title_tester": "Testador", "tips_tester_content": "Testa conec.", "title_capture": "Captura", "tips_capture_content": "Extrair stream.", "title_editor": "Editor", "desc_editor": "Texto/Lista/Grade.", "title_checker": "Verificador", "tips_checker_content": "Verif. massa.", "title_converter": "Conversor", "desc_converter": "Converter formato.", "btn_play": "Tocar", "btn_test_link": "Testar", "upload_text": "Arquivo", "mode_text": "Texto", "mode_list": "Lista", "mode_grid": "Grade", "btn_batch": "Lote", "btn_save": "Salvar", "btn_discard": "Reset", "btn_select_all": "Todos", "btn_edit_group": "Grupo", "btn_edit_logo": "Logo", "btn_delete": "Apagar", "btn_exit": "Sair", "btn_start_check": "Início", "btn_reset": "Reset", "btn_reupload": "Voltar", "btn_cancel": "Cancelar", "btn_confirm": "OK", "btn_add_prop": "+Prop", "status_valid": "✅ Sucesso", "status_invalid": "❌ Falha", "err_network": "Erro", "modal_file_title": "Carregado", "modal_file_desc": "Abrir?", "modal_batch_title": "Lote", "modal_edit_title": "Editar" }
         };
 
-        // --- 初始化 ---
-        (function initLang() {
-            const sysLang = navigator.language || navigator.userLanguage; 
-            if (sysLang.startsWith('zh')) currentLang = 'zh';
-            else if (sysLang.startsWith('ja')) currentLang = 'ja';
-            else if (sysLang.startsWith('ko')) currentLang = 'ko';
-            else if (sysLang.startsWith('ru')) currentLang = 'ru';
-            else if (sysLang.startsWith('de')) currentLang = 'de';
-            else if (sysLang.startsWith('fr')) currentLang = 'fr';
-            else if (sysLang.startsWith('es')) currentLang = 'es';
-            else if (sysLang.startsWith('pt')) currentLang = 'pt';
-            else currentLang = 'en';
+        // --- Logic ---
+        (function init() {
+            const sysLang = navigator.language || navigator.userLanguage;
+            if(sysLang.startsWith('zh')) currentLang='zh';
+            else if(sysLang.startsWith('ja')) currentLang='ja';
+            else if(sysLang.startsWith('ko')) currentLang='ko';
+            else if(sysLang.startsWith('ru')) currentLang='ru';
+            else if(sysLang.startsWith('de')) currentLang='de';
+            else if(sysLang.startsWith('fr')) currentLang='fr';
+            else if(sysLang.startsWith('es')) currentLang='es';
+            else if(sysLang.startsWith('pt')) currentLang='pt';
+            else currentLang='en';
             updatePageLang();
         })();
 
         function toggleLangMenu() { document.getElementById('langMenu').classList.toggle('active'); }
-        function changeLang(lang) { currentLang = lang; updatePageLang(); document.getElementById('langMenu').classList.remove('active'); }
+        function changeLang(l) { currentLang=l; updatePageLang(); document.getElementById('langMenu').classList.remove('active'); }
         function updatePageLang() {
-            const labelMap = { 'zh':'CN', 'en':'EN', 'ja':'JP', 'ko':'KR', 'ru':'RU', 'de':'DE', 'fr':'FR', 'es':'ES', 'pt':'PT' };
-            document.getElementById('currentLangLabel').textContent = labelMap[currentLang] || 'EN';
-            const data = i18nData[currentLang] || i18nData['en'];
+            const map={'zh':'CN','en':'EN','ja':'JP','ko':'KR','ru':'RU','de':'DE','fr':'FR','es':'ES','pt':'PT'};
+            document.getElementById('currentLangLabel').textContent = map[currentLang]||'EN';
+            const data = i18nData[currentLang]||i18nData['en'];
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (data[key]) {
-                    if (key.includes('content') || key.includes('desc')) el.innerHTML = data[key];
-                    else el.textContent = data[key];
-                }
-            });
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                const key = el.getAttribute('data-i18n-placeholder');
-                if (data[key]) el.placeholder = data[key];
+                if(data[key]) el.textContent = data[key];
             });
         }
-        function t(key) { return (i18nData[currentLang] || i18nData['en'])[key] || key; }
+        function t(k) { return (i18nData[currentLang]||i18nData['en'])[k]||k; }
 
-        // --- 导航 ---
-        function toggleMenu() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
         function switchTab(id, btn) {
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(el=>el.classList.remove('active'));
             btn.classList.add('active');
-            document.querySelectorAll('.section-view').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.section-view').forEach(el=>el.classList.remove('active'));
             document.getElementById('section-'+id).classList.add('active');
             toggleMenu();
         }
 
-        // --- 核心：捕捉测试 ---
         async function testCaptureUrl() {
-            const input = document.getElementById('captureInput');
-            const resultDiv = document.getElementById('captureResult');
-            const loadingDiv = document.getElementById('captureLoading');
-            const btn = document.getElementById('captureBtn');
-            const url = input.value.trim();
-
-            if (!url) { alert('URL Required'); return; }
-
-            resultDiv.style.display = 'none';
-            loadingDiv.style.display = 'block';
-            btn.disabled = true;
-
+            const url = document.getElementById('captureInput').value;
+            const res = document.getElementById('captureResult');
+            const load = document.getElementById('captureLoading');
+            if(!url) return;
+            res.innerHTML=''; load.style.display='block';
             try {
-                const response = await fetch(`${API_BASE}?url=${encodeURIComponent(url)}`);
-                const data = await response.json();
-
-                loadingDiv.style.display = 'none';
-                resultDiv.style.display = 'block';
-
-                if (data.error) {
-                    resultDiv.innerHTML = `<div class="result-card" style="border-left-color:var(--danger-color);"><div class="result-title" style="color:var(--danger-color);">${t('status_invalid')}</div><div style="font-size:13px;color:#ccc;">${data.error}</div></div>`;
+                const req = await fetch(API_BASE+"?url="+encodeURIComponent(url));
+                const data = await req.json();
+                load.style.display='none';
+                if(data.error) {
+                    res.innerHTML=`<div class="result-card" style="border-left-color:var(--danger)">${t('status_invalid')}: ${data.error}</div>`;
                 } else {
-                    const title = data.title || t('lbl_unknown');
-                    const extractor = data.extractor || t('lbl_unknown');
-                    const duration = data.duration ? formatDuration(data.duration) : t('lbl_unknown');
-                    
-                    let thumbHtml = '';
-                    if (data.thumbnail) {
-                        thumbHtml = `<div class="result-thumb-box" style="display:block"><img src="${data.thumbnail}" class="result-thumb" onerror="this.parentElement.style.display='none'"></div>`;
-                    }
-
-                    let formatsHtml = `<span class="quality-badge">${t('lbl_raw')}</span>`;
-                    if (data.formats && data.formats.length > 0) {
-                        const unique = []; const seen = new Set();
-                        data.formats.forEach(f => {
-                            const label = f.format_note || f.resolution || 'UNK';
-                            if(!seen.has(label)){ seen.add(label); unique.push(f); }
-                        });
-                        formatsHtml = unique.map(f => {
-                            const isAudio = f.is_audio;
-                            return `<span class="quality-badge ${isAudio?'audio':''}">${f.format_note||f.resolution}</span>`;
-                        }).join('');
-                    }
-
-                    resultDiv.innerHTML = `
-                        <div class="result-card">
-                            ${thumbHtml}
-                            <div class="result-header">
-                                <div class="result-title">${title}</div>
-                                <div class="result-badge">${t('status_valid')}</div>
-                            </div>
-                            <div class="meta-grid">
-                                <div class="meta-item"><span class="meta-label">${t('lbl_source')}</span><span class="meta-value">${extractor}</span></div>
-                                <div class="meta-item"><span class="meta-label">${t('lbl_duration')}</span><span class="meta-value">${duration}</span></div>
-                            </div>
-                            <div class="format-list-title">${t('lbl_quality')}</div>
-                            <div class="quality-badges">${formatsHtml}</div>
-                        </div>
-                    `;
+                    let thumb = data.thumbnail ? `<div class="result-thumb-box" style="display:block"><img src="${data.thumbnail}" class="result-thumb"></div>` : '';
+                    let fmts = (data.formats||[]).map(f=>`<span class="quality-badge ${f.is_audio?'audio':''}">${f.format_note||f.resolution}</span>`).join('');
+                    res.innerHTML=`<div class="result-card">${thumb}<div class="result-header"><div class="result-title">${data.title}</div><div class="result-badge">${t('status_valid')}</div></div><div class="quality-badges">${fmts}</div></div>`;
                 }
-            } catch (err) {
-                loadingDiv.style.display = 'none';
-                resultDiv.style.display = 'block';
-                resultDiv.innerHTML = `<div class="result-card" style="border-left-color:var(--danger-color);"><div class="result-title" style="color:var(--danger-color);">${t('err_network')}</div><div style="font-size:13px;color:#ccc;">${err.message}</div></div>`;
-            } finally {
-                btn.disabled = false;
+            } catch(e) {
+                load.style.display='none'; res.innerHTML=`<div class="result-card" style="border-left-color:var(--danger)">${t('err_network')}: ${e.message}</div>`;
             }
         }
 
-        function formatDuration(seconds) {
-            if (!seconds) return '--:--';
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = Math.floor(seconds % 60);
-            return h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
-        }
-
-        // --- 文件处理 ---
+        // Upload Fix: Use explicit ID
         function triggerUpload(target) {
             currentUploadTarget = target;
-            let id = target === 'editor' ? 'fileInputEditor' : (target === 'checker' ? 'fileInputChecker' : 'fileInputConverter');
+            const id = target==='editor'?'fileInputEditor':(target==='checker'?'fileInputChecker':'fileInputConverter');
             document.getElementById(id).click();
         }
-        document.querySelectorAll('input[type="file"]').forEach(el => el.addEventListener('change', handleFileSelect));
-
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const content = evt.target.result;
-                if(currentUploadTarget === 'editor') {
-                    editorData.buffer = content; editorData.name = file.name;
-                } else if(currentUploadTarget === 'checker') checkerData.raw = content;
-                else { converterData.raw = content; converterData.name = file.name; }
-                
+        document.querySelectorAll('input[type="file"]').forEach(el => el.addEventListener('change', handleFile));
+        function handleFile(e) {
+            const f = e.target.files[0];
+            if(!f) return;
+            const r = new FileReader();
+            r.onload = (evt) => {
+                const txt = evt.target.result;
+                if(currentUploadTarget==='editor') { editorData.buffer=txt; editorData.name=f.name; }
+                else if(currentUploadTarget==='checker') checkerData.raw=txt;
+                else { converterData.raw=txt; converterData.name=f.name; }
                 document.getElementById('confirmText').textContent = t('modal_file_desc');
-                confirmModal.style.display = 'flex';
+                document.getElementById('confirmModal').style.display='flex'; // Corrected
             };
-            reader.readAsText(file);
-            e.target.value = '';
+            r.readAsText(f);
+            e.target.value='';
         }
-
-        function closeConfirm(isConfirmed) {
-            confirmModal.style.display = 'none';
-            if (!isConfirmed) return;
-            if (currentUploadTarget === 'editor') {
+        function closeConfirm(yes) {
+            document.getElementById('confirmModal').style.display='none';
+            if(!yes) return;
+            if(currentUploadTarget==='editor') {
                 document.getElementById('codeEditor').value = editorData.buffer;
-                document.getElementById('step-upload-editor').style.display = 'none';
-                document.getElementById('step-edit-ui').style.display = 'block';
-                currentMode = 'text'; setMode('text'); parseTextToData();
-            } else if (currentUploadTarget === 'checker') initChecker(checkerData.raw);
-            else initConverter(converterData.raw);
+                document.getElementById('step-upload-editor').style.display='none';
+                document.getElementById('step-edit-ui').style.display='block';
+                setMode('text');
+            } else if(currentUploadTarget==='checker') {
+                initChecker(checkerData.raw);
+            } else {
+                initConverter(converterData.raw);
+            }
         }
 
-        // --- 数据解析 ---
-        function extractChannels(rawText) {
-            const lines = rawText.split(/\r?\n/);
-            const channels = [];
-            let current = null;
-            lines.forEach(line => {
-                line = line.trim();
-                if(line.startsWith('#EXTINF:')) {
-                    const params = {};
-                    const nameParts = line.split(',');
-                    const name = nameParts[nameParts.length-1].trim();
-                    const logoMatch = line.match(/tvg-logo="([^"]*)"/);
-                    const groupMatch = line.match(/group-title="([^"]*)"/);
-                    params['tvg-logo'] = logoMatch ? logoMatch[1] : '';
-                    params['group-title'] = groupMatch ? groupMatch[1] : '';
-                    params['name'] = name;
-                    current = { name, params };
-                } else if(line && !line.startsWith('#')) {
-                    if(current) { current.url = line; channels.push(current); current = null; }
+        // Editor
+        function parseM3U(txt) {
+            const lines = txt.split(/\r?\n/);
+            const ch=[]; let cur=null;
+            lines.forEach(l=>{
+                l=l.trim();
+                if(l.startsWith('#EXTINF:')) {
+                    const p={};
+                    const name = l.split(',').pop().trim();
+                    const logo = l.match(/tvg-logo="([^"]*)"/);
+                    const grp = l.match(/group-title="([^"]*)"/);
+                    p.logo = logo?logo[1]:''; p.group = grp?grp[1]:'';
+                    cur={name,params:p};
+                } else if(l && !l.startsWith('#')) {
+                    if(cur) { cur.url=l; ch.push(cur); cur=null; }
                 }
             });
-            return channels;
+            return ch;
         }
-
-        // --- 编辑器核心 (列表与批量修复) ---
-        function parseTextToData() {
-            editorData.channelData = extractChannels(document.getElementById('codeEditor').value);
+        function syncText() {
+            let out="#EXTM3U\n";
+            editorData.channelData.forEach(c=>{ out+=`#EXTINF:-1 tvg-logo="${c.params.logo}" group-title="${c.params.group}",${c.name}\n${c.url}\n`; });
+            document.getElementById('codeEditor').value=out;
         }
-        function syncDataToText() {
-            let text = "#EXTM3U\n";
-            editorData.channelData.forEach(ch => {
-                text += `#EXTINF:-1 tvg-logo="${ch.params['tvg-logo']||''}" group-title="${ch.params['group-title']||''}",${ch.name}\n${ch.url}\n`;
-            });
-            document.getElementById('codeEditor').value = text;
-        }
-
-        function setMode(mode) {
-            if (currentMode === 'text') parseTextToData();
-            else if (mode === 'text') syncDataToText();
+        function setMode(m) {
+            if(currentMode==='text') editorData.channelData = parseM3U(document.getElementById('codeEditor').value);
+            else if(m==='text') syncText();
+            document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+            document.getElementById('codeEditor').style.display='none';
+            document.getElementById('visualEditor').style.display='none';
+            document.getElementById('gridEditor').style.display='none';
+            document.getElementById('btnBatch').style.display='none';
             
-            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('codeEditor').style.display = 'none';
-            document.getElementById('visualEditor').style.display = 'none';
-            document.getElementById('gridEditor').style.display = 'none';
-            
-            // 修复：显隐批量按钮
-            const btnBatch = document.getElementById('btnBatch');
-            if (mode === 'grid') {
-                btnBatch.style.display = 'flex';
-                document.getElementById('gridEditor').style.display = 'grid';
-                renderGrid();
-                document.getElementById('btnModeGrid').classList.add('active');
-            } else if (mode === 'visual') {
-                btnBatch.style.display = 'none';
-                document.getElementById('visualEditor').style.display = 'block';
-                renderVisualList();
+            if(m==='text') {
+                document.getElementById('codeEditor').style.display='block';
+                document.getElementById('btnModeText').classList.add('active');
+            } else if(m==='visual') {
+                document.getElementById('visualEditor').style.display='block';
+                renderList();
                 document.getElementById('btnModeVisual').classList.add('active');
             } else {
-                btnBatch.style.display = 'none';
-                document.getElementById('codeEditor').style.display = 'block';
-                document.getElementById('btnModeText').classList.add('active');
+                document.getElementById('gridEditor').style.display='grid';
+                document.getElementById('btnBatch').style.display='flex';
+                renderGrid();
+                document.getElementById('btnModeGrid').classList.add('active');
             }
-            currentMode = mode;
+            currentMode=m;
         }
-
-        function renderVisualList() {
-            const list = document.getElementById('visualEditor');
-            list.innerHTML = '';
-            editorData.channelData.forEach((item, index) => {
-                const li = document.createElement('li');
-                li.className = 'channel-item';
-                li.innerHTML = `<div class="channel-info"><div class="ch-name">${item.name}</div><div class="ch-url">${item.url}</div></div><div class="drag-handle">☰</div>`;
-                list.appendChild(li);
+        function renderList() {
+            const el = document.getElementById('visualEditor'); el.innerHTML='';
+            editorData.channelData.forEach((c,i)=>{
+                el.innerHTML+=`<li class="channel-item"><div style="flex:1"><div class="ch-name">${c.name}</div><div class="ch-url">${c.url}</div></div><div class="drag-handle">☰</div></li>`;
             });
-            // 修复：重新绑定 Sortable 并同步数据
-            if(Sortable) {
-                Sortable.create(list, { 
-                    handle: '.drag-handle', 
-                    animation: 150,
-                    onEnd: function(evt) {
-                        const item = editorData.channelData.splice(evt.oldIndex, 1)[0];
-                        editorData.channelData.splice(evt.newIndex, 0, item);
-                    }
-                });
-            }
+            if(Sortable) Sortable.create(el, { handle:'.drag-handle', onEnd:(e)=>{
+                const item = editorData.channelData.splice(e.oldIndex,1)[0];
+                editorData.channelData.splice(e.newIndex,0,item);
+            }});
         }
-
         function renderGrid() {
-            const grid = document.getElementById('gridEditor');
-            grid.innerHTML = '';
-            editorData.channelData.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = `grid-card ${selectedIndices.has(index) ? 'selected' : ''}`;
-                if(isBatchMode) card.classList.add('selecting');
-                
-                const logo = item.params['tvg-logo'];
-                const imgHtml = logo ? `<img src="${logo}" class="card-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
-                
-                card.innerHTML = `
-                    <div class="check-circle"></div>
-                    <div class="card-img-box">${imgHtml}<div class="card-placeholder" ${logo?'style="display:none"':''}>${item.name[0]}</div></div>
-                    <div class="card-info"><div class="card-tag">${item.params['group-title']||'UNK'}</div><div class="card-name">${item.name}</div></div>
-                `;
-                card.onclick = () => handleCardClick(index);
-                grid.appendChild(card);
+            const el = document.getElementById('gridEditor'); el.innerHTML='';
+            editorData.channelData.forEach((c,i)=>{
+                const sel = selectedIndices.has(i) ? 'selected' : '';
+                const selClass = isBatchMode ? 'selecting' : '';
+                el.innerHTML+=`<div class="grid-card ${sel} ${selClass}" onclick="clickCard(${i})"><div class="check-circle"></div><div class="card-img-box">${c.params.logo?`<img src="${c.params.logo}" class="card-img">`:'📺'}</div><div class="card-info"><div class="card-tag">${c.params.group||'UNK'}</div><div class="card-name">${c.name}</div></div></div>`;
             });
         }
-
         function toggleBatchMode(force) {
-            isBatchMode = force !== undefined ? force : !isBatchMode;
+            isBatchMode = force!==undefined?force:!isBatchMode;
             selectedIndices.clear();
-            const bar = document.getElementById('batchBar');
-            bar.style.display = isBatchMode ? 'flex' : 'none';
+            document.getElementById('batchBar').style.display=isBatchMode?'flex':'none';
             renderGrid();
         }
-        function handleCardClick(idx) {
+        function clickCard(i) {
             if(isBatchMode) {
-                if(selectedIndices.has(idx)) selectedIndices.delete(idx);
-                else selectedIndices.add(idx);
-                document.getElementById('batchCount').textContent = `${t('batch_selected')}: ${selectedIndices.size}`;
+                if(selectedIndices.has(i)) selectedIndices.delete(i); else selectedIndices.add(i);
+                document.getElementById('batchCount').textContent=`Selected: ${selectedIndices.size}`;
                 renderGrid();
             } else {
-                currentEditIndex = idx;
-                openEditModal(idx);
+                // Edit single logic can go here
             }
         }
         function toggleSelectAll() {
-            if(selectedIndices.size === editorData.channelData.length) selectedIndices.clear();
-            else editorData.channelData.forEach((_,i) => selectedIndices.add(i));
-            document.getElementById('batchCount').textContent = `${t('batch_selected')}: ${selectedIndices.size}`;
+            if(selectedIndices.size===editorData.channelData.length) selectedIndices.clear();
+            else editorData.channelData.forEach((_,i)=>selectedIndices.add(i));
+            document.getElementById('batchCount').textContent=`Selected: ${selectedIndices.size}`;
             renderGrid();
         }
         function batchDelete() {
             if(!confirm('Delete?')) return;
-            const sorted = Array.from(selectedIndices).sort((a,b)=>b-a);
-            sorted.forEach(i => editorData.channelData.splice(i,1));
-            toggleBatchMode(false);
-            setMode('grid');
+            const idxs = Array.from(selectedIndices).sort((a,b)=>b-a);
+            idxs.forEach(i=>editorData.channelData.splice(i,1));
+            toggleBatchMode(false); setMode('grid');
         }
-        function openBatchEdit(type) {
-            currentBatchType = type;
-            document.getElementById('batchInput').value = '';
-            document.getElementById('batchInputModal').style.display = 'flex';
-        }
+        function openBatchEdit(t) { currentBatchType=t; document.getElementById('batchInput').value=''; document.getElementById('batchInputModal').style.display='flex'; }
         function applyBatchEdit() {
-            const val = document.getElementById('batchInput').value;
-            const key = currentBatchType === 'group' ? 'group-title' : 'tvg-logo';
-            selectedIndices.forEach(i => editorData.channelData[i].params[key] = val);
-            syncDataToText();
-            document.getElementById('batchInputModal').style.display = 'none';
+            const v = document.getElementById('batchInput').value;
+            const k = currentBatchType==='group'?'group':'logo';
+            selectedIndices.forEach(i=>editorData.channelData[i].params[k]=v);
+            document.getElementById('batchInputModal').style.display='none';
             toggleBatchMode(false);
         }
+        function saveAndDownload() {
+            if(currentMode!=='text') syncText();
+            const b = new Blob([document.getElementById('codeEditor').value],{type:'text/plain'});
+            const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='playlist.m3u'; a.click();
+        }
+        
+        // Checker & Converter
+        function initChecker(txt) {
+            document.getElementById('step-upload-checker').style.display='none';
+            document.getElementById('step-check-ui').style.display='block';
+            checkerData.channels = parseM3U(txt);
+            document.getElementById('checkList').innerHTML = checkerData.channels.map(c=>`<div class="check-item"><div>${c.name}</div><div style="font-size:12px">WAIT</div></div>`).join('');
+        }
+        function initConverter(txt) {
+            document.getElementById('step-upload-converter').style.display='none';
+            document.getElementById('step-convert-ui').style.display='block';
+            converterData.channels = parseM3U(txt);
+        }
+        function resetEditor(){ location.reload(); }
+        function resetChecker(){ location.reload(); }
+        function resetConverter(){ location.reload(); }
 
-        // --- 单个编辑逻辑 ---
-        let currentEditIndex = -1;
-        function openEditModal(index) {
-            const item = editorData.channelData[index];
-            const form = document.getElementById('dynamicForm');
-            form.innerHTML = '';
-            createInput('Name', 'name', item.name);
-            createInput('URL', 'url', item.url);
-            createInput('Logo', 'tvg-logo', item.params['tvg-logo']);
-            createInput('Group', 'group-title', item.params['group-title']);
-            document.getElementById('editModal').style.display = 'flex';
-        }
-        function createInput(label, key, val) {
-            const div = document.createElement('div');
-            div.className = 'form-group';
-            div.innerHTML = `<label class="form-label">${label}</label><input class="form-input" data-key="${key}" value="${val||''}">`;
-            document.getElementById('dynamicForm').appendChild(div);
-        }
-        function saveChannelData() {
-            const inputs = document.querySelectorAll('#dynamicForm input');
-            const item = editorData.channelData[currentEditIndex];
-            inputs.forEach(input => {
-                const key = input.dataset.key;
-                if(key==='name') item.name = input.value;
-                else if(key==='url') item.url = input.value;
-                else item.params[key] = input.value;
-            });
-            syncDataToText();
-            document.getElementById('editModal').style.display = 'none';
-            renderGrid();
-        }
-        function addNewProperty() {
-            const key = prompt("Key (e.g. tvg-id):");
-            if(key) createInput(key, key, '');
-        }
-
-        // --- 转换器 & 检测器 ---
-        function initConverter(raw) {
-            document.getElementById('step-upload-converter').style.display = 'none';
-            document.getElementById('step-convert-ui').style.display = 'block';
-            converterData.channels = extractChannels(raw);
-            document.getElementById('convertCount').textContent = converterData.channels.length;
-        }
-        function doConvert(fmt) {
-            let out = "";
-            if (fmt==='json') out = JSON.stringify(converterData.channels, null, 2);
-            else if (fmt==='txt') converterData.channels.forEach(c => out += `${c.name},${c.url}\n`);
-            else {
-                out = "#EXTM3U\n";
-                converterData.channels.forEach(c => out += `#EXTINF:-1 tvg-id="${fmt==='tivimate'?c.name:''}" tvg-logo="${c.params['tvg-logo']||''}" group-title="${c.params['group-title']||''}",${c.name}\n${c.url}\n`);
-            }
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([out],{type:'text/plain'}));
-            a.download = `converted.${fmt}`; a.click();
-        }
-        function initChecker(raw) {
-            document.getElementById('step-upload-checker').style.display = 'none';
-            document.getElementById('step-check-ui').style.display = 'block';
-            checkerData.channels = extractChannels(raw);
-            const list = document.getElementById('checkList');
-            list.innerHTML = '';
-            checkerData.channels.forEach((c,i) => {
-                list.innerHTML += `<div class="check-item"><div class="check-info"><div class="check-name">${c.name}</div></div><div id="chk-${i}" style="font-size:12px;font-weight:bold;">WAIT</div></div>`;
-            });
-        }
-        async function startCheckAll() {
-            const total = checkerData.channels.length;
-            let done = 0;
-            for(let i=0; i<total; i++) {
-                const el = document.getElementById(`chk-${i}`);
-                el.innerText = "..."; el.style.color = "var(--primary-color)";
-                try {
-                    await fetch(checkerData.channels[i].url, {method:'HEAD', mode:'no-cors'});
-                    el.innerText = "OK"; el.style.color = "var(--success-color)";
-                } catch {
-                    el.innerText = "ERR"; el.style.color = "var(--danger-color)";
-                }
-                done++;
-                document.getElementById('checkProgress').style.width = (done/total*100) + "%";
-            }
-        }
-
-        // --- 播放器 & 工具 ---
-        function resetEditor(){ if(confirm('Reset?')) location.reload(); }
-        function resetChecker(){ if(confirm('Reset?')) location.reload(); }
-        function resetConverter(){ if(confirm('Reset?')) location.reload(); }
-        function saveAndDownload(){ syncDataToText(); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([document.getElementById('codeEditor').value],{type:'text/plain'})); a.download='playlist.m3u'; a.click(); }
-        function insertTemplate() {
-            const editor = document.getElementById('codeEditor');
-            const tpl = `\n#EXTINF:-1 tvg-logo="" group-title="New",New Channel\nhttp://url\n`;
-            editor.value += tpl;
-            parseTextToData();
-        }
-
-        document.getElementById('playBtn').addEventListener('click', () => {
-            const url = document.getElementById('urlInput').value.trim();
+        // Player
+        document.getElementById('playBtn').addEventListener('click', ()=>{
+            const url = document.getElementById('urlInput').value;
             const v = document.getElementById('video');
-            const msg = document.getElementById('statusMsg');
-            if(!url) return;
-            
             if(Hls.isSupported()) {
-                const hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(v);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = t('status_ready'); });
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    // 修复：只在致命错误时提示，忽略普通缓冲警告
-                    if (data.fatal) {
-                        msg.textContent = "Error: " + data.type;
-                        msg.style.color = "var(--danger-color)";
-                        switch(data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR: hls.startLoad(); break;
-                            case Hls.ErrorTypes.MEDIA_ERROR: hls.recoverMediaError(); break;
-                            default: hls.destroy(); break;
-                        }
-                    }
-                });
-            } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
-                v.src = url; v.play();
+                const h = new Hls(); h.loadSource(url); h.attachMedia(v);
+                h.on(Hls.Events.MANIFEST_PARSED, ()=>v.play());
+            } else if(v.canPlayType('application/vnd.apple.mpegurl')) {
+                v.src=url; v.play();
             }
         });
     </script>
