@@ -34,18 +34,14 @@
         }
         .menu-btn { background: none; border: none; color: white; font-size: 24px; padding: 5px; cursor: pointer; z-index: 101; }
         
-        /* 标题居中 & 放大优化 */
         .app-title { 
-            font-size: 22px; 
-            font-weight: 700; 
-            letter-spacing: 0.5px;
+            font-size: 22px; font-weight: 700; letter-spacing: 0.5px;
             background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); 
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             position: absolute; left: 0; right: 0; margin: auto; text-align: center; 
             pointer-events: none; width: fit-content;
         }
         
-        /* 语言切换器 */
         .lang-container { position: relative; z-index: 101; }
         .lang-btn { background: none; border: 1px solid var(--border-color); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
         .lang-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--primary-color); }
@@ -59,7 +55,6 @@
         .lang-item:hover { background: var(--surface-active); color: white; }
         .lang-flag { font-size: 18px; }
 
-        /* 侧边栏 */
         .sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: var(--surface-color); transform: translateX(-100%); transition: 0.3s; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
         .sidebar.active { transform: translateX(0); }
         .sidebar-header { height: 64px; display: flex; align-items: center; padding-left: 20px; border-bottom: 1px solid var(--border-color); font-weight: bold; color: var(--text-gray); flex-shrink: 0; }
@@ -164,13 +159,71 @@
         .fmt-name { font-weight: bold; font-size: 16px; color: white; margin-bottom: 5px; }
         .fmt-desc { font-size: 13px; color: var(--text-gray); line-height: 1.4; }
 
-        /* --- 8. 捕捉测试新样式 --- */
-        .capture-result { margin-top: 20px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: none; }
-        .capture-loading { display: none; text-align: center; color: var(--text-gray); padding: 20px; }
-        .quality-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
-        .quality-badge { background: rgba(62, 166, 255, 0.15); color: var(--primary-color); border: 1px solid var(--primary-color); padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .info-row { margin-bottom: 10px; }
-        .info-label { font-weight: bold; color: #ccc; margin-right: 10px; }
+        /* --- 8. 捕捉测试新样式 (美化版) --- */
+        .capture-result { 
+            margin-top: 25px; 
+            display: none; 
+            animation: fadeIn 0.4s ease;
+        }
+        .result-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-left: 5px solid var(--success-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        .result-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding-bottom: 15px;
+        }
+        .result-title {
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1.4;
+            color: #fff;
+            flex: 1;
+        }
+        .result-badge {
+            background: rgba(43, 166, 64, 0.15);
+            color: var(--success-color);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .meta-item { display: flex; flex-direction: column; }
+        .meta-label { font-size: 12px; color: var(--text-gray); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .meta-value { font-size: 14px; color: #eee; font-weight: 500; }
+        
+        .format-list-title { font-size: 13px; font-weight: bold; margin-bottom: 10px; color: var(--primary-color); }
+        .quality-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+        .quality-badge { 
+            background: rgba(62, 166, 255, 0.1); 
+            color: var(--primary-color); 
+            border: 1px solid rgba(62, 166, 255, 0.3); 
+            padding: 5px 10px; 
+            border-radius: 6px; 
+            font-size: 12px; 
+            font-family: monospace;
+            transition: 0.2s;
+        }
+        .quality-badge:hover { background: rgba(62, 166, 255, 0.2); transform: translateY(-1px); }
+
+        .capture-loading { display: none; text-align: center; color: var(--text-gray); padding: 40px; }
+        .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--primary-color); animation: spin 1s ease-in-out infinite; margin-bottom: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* --- 9. 批量栏 & 弹窗 --- */
         .batch-bar {
@@ -316,12 +369,12 @@
             <div class="section-title" data-i18n="title_capture">在线网站捕捉测试 (yt-dlp)</div>
             <div class="tips-box">
                 <div class="tips-title" data-i18n="tips_title">🛠️ 核心机制与局限性说明</div>
-                <span style="font-size:13px; line-height: 1.6;">
+                <span style="font-size:13px; line-height: 1.6;" data-i18n="tips_capture_content">
                 <b>功能用途：</b>基于 yt-dlp 核心，测试能否从视频网站（YouTube, Twitch, 虎牙等）解析出 M3U8 直播流或真实播放地址。<br><br>
                 <b>⚠️ 成功率说明：</b><br>
-                1. <b>反爬封锁</b>：YouTube 等大平台会对“云服务器 IP”（如 Vercel, AWS）进行严格的风控（提示 Sign in），导致解析失败。<br>
-                2. <b>解决方案</b>：为了获得最佳稳定性，建议使用“家庭宽带 IP”或“私人服务器”运行后端。<br>
-                3. <b>本站状态</b>：当前页面为前端演示。如果您正在本地（如手机 Termux）或私人网络下部署后端，成功率将大幅提升。
+                1. <b>反爬封锁</b>：YouTube 等大平台会对“云服务器 IP”（如 Vercel, AWS）进行严格的风控，导致解析失败。<br>
+                2. <b>解决方案</b>：强烈建议使用<b>“本地部署”</b>（如 Termux、NAS）或<b>“私人服务器”</b>运行后端。<br>
+                3. <b>操作建议</b>：如果遇到解析失败，请尝试<b>点击 2-3 次测试</b>，或更换节点后再试。
                 </span>
             </div>
             <div class="input-group">
@@ -330,11 +383,11 @@
             </div>
 
             <div id="captureLoading" class="capture-loading">
-                ⏳ <span data-i18n="msg_analyzing">正在云端分析中，请耐心等待...</span>
+                <div class="spinner"></div>
+                <div data-i18n="msg_analyzing">正在云端分析中，请耐心等待...</div>
             </div>
 
-            <div id="captureResult" class="capture-result">
-                </div>
+            <div id="captureResult" class="capture-result"></div>
         </div>
 
         <div id="section-editor" class="section-view">
@@ -474,7 +527,6 @@
         </div>
 
     </main>
-
     <script>
         // --- 9.2 完整多语言词典 ---
         const i18nData = {
@@ -483,65 +535,70 @@
                 "menu_tester": "📺 在线链接测试", "menu_capture": "🔗 在线网站捕捉测试", "menu_editor": "📝 直播源在线编辑", "menu_checker": "📡 直播源在线检测", "menu_converter": "🔄 直播源文件转换",
                 "title_tester": "M3U/M3U8 链接在线测试", "btn_play": "播放", "status_ready": "准备就绪", "tips_tester_content": "此工具仅用于测试链接的<b>连通性</b>和<b>初始加载</b>。<br>注意：部分流媒体因 <b>CORS（跨域策略）</b> 限制可能无法在浏览器中播放，或者拖动进度条时可能出现缓冲错误，这通常属于源站限制而非工具故障。",
                 "title_capture": "在线网站捕捉测试 (yt-dlp)", "btn_test_link": "测试链接", "msg_analyzing": "正在云端分析中，请耐心等待...",
-                "title_editor": "直播源文件编辑", "desc_editor": "1. <b>操作模式</b>：提供“文本代码”、“可视化列表”和“网格资料”三种视图，支持拖拽排序。<br>2. <b>批量处理</b>：在网格模式下，点击右上角进入批量模式，可快速修改分组名称和台标。<br>3. <b>性能提示</b>：所有操作均在本地浏览器完成。为防止页面卡顿，建议处理 <b>10MB</b> 以下的文件。",
+                "tips_capture_content": "<b>功能用途：</b>基于 yt-dlp 核心，测试能否从视频网站（YouTube, Twitch, 虎牙等）解析出 M3U8 直播流或真实播放地址。<br><br><b>⚠️ 成功率说明：</b><br>1. <b>反爬封锁</b>：YouTube 等大平台会对“云服务器 IP”进行严格风控。<br>2. <b>解决方案</b>：强烈建议使用<b>“本地部署”</b>（Termux/NAS）或<b>“私人服务器”</b>。<br>3. <b>操作建议</b>：如遇失败，请尝试<b>点击 2-3 次测试</b>或更换节点。",
+                "title_editor": "直播源文件编辑", "desc_editor": "1. <b>操作模式</b>：提供“文本代码”、“可视化列表”和“网格资料”三种视图，支持拖拽排序。<br>2. <b>批量处理</b>：在网格模式下，点击右上角进入批量模式，可快速修改分组名称和台标。<br>3. <b>性能提示</b>：本地浏览器处理。建议处理 <b>10MB</b> 以下文件。",
                 "upload_text": "点击选择或拖拽文件", "btn_select_file": "选择文件",
                 "mode_text": "📄 文本", "mode_list": "☰ 列表", "mode_grid": "▦ 资料",
-                "btn_batch": "✅ 批量选择", "btn_add": "➕ 添加", "btn_save": "💾 保存", "btn_discard": "❌ 放弃修改并重新上传",
+                "btn_batch": "✅ 批量选择", "btn_add": "➕ 添加", "btn_save": "💾 保存", "btn_discard": "❌ 放弃修改",
                 "title_checker": "直播源在线检测", "tips_title": "📢 说明",
                 "tips_checker_content": "1. <b>智能探测</b>：自动使用“混合探测模式”。<br>2. <b>⚠️ 可能有效</b>：黄色状态表示服务器连通，但被浏览器拦截。<br>3. <b>❌ 无效</b>：连接拒绝或超时。",
                 "upload_checker_text": "导入直播源文件进行检测", "label_batch_check": "批量检测", "btn_start_check": "▶ 开始全测", "btn_reset": "🔄 清空并重新导入",
-                "title_converter": "直播源文件转换", "desc_converter": "1. <b>智能解析</b>：系统会自动识别输入文件的格式（M3U/TXT），并提取频道名、链接、Logo及分组信息。<br>2. <b>TiviMate 优化</b>：选择 TiviMate 格式时，会自动补充 <code>tvg-id</code> 等特定标签以匹配 EPG。<br>3. <b>通用性</b>：TXT 格式为“频道名,链接”的简单结构，适用于绝大多数简易播放器。",
+                "title_converter": "直播源文件转换", "desc_converter": "1. <b>智能解析</b>：系统会自动识别输入文件的格式（M3U/TXT）。<br>2. <b>TiviMate</b>：选择 TiviMate 格式时，会自动补充 <code>tvg-id</code>。<br>3. <b>通用性</b>：TXT 格式为“频道名,链接”结构。",
                 "upload_converter_text": "导入任意格式直播源", "label_file_read": "📂 已读取文件", "label_channel_count": "共识别有效频道：", "label_select_format": "请选择目标格式：",
-                "fmt_m3u_desc": "标准格式，支持台标分组", "fmt_txt": "TXT 文本", "fmt_txt_desc": "简单逗号分隔 (频道,链接)", "fmt_json_desc": "开发人员通用数据格式", "fmt_tivi_desc": "优化版M3U，补全tvg-id",
+                "fmt_m3u_desc": "标准格式，支持台标分组", "fmt_txt": "TXT 文本", "fmt_txt_desc": "简单逗号分隔", "fmt_json_desc": "开发人员通用数据格式", "fmt_tivi_desc": "优化版M3U，补全tvg-id",
                 "btn_reupload": "↩️ 返回重新上传", "batch_selected": "已选 0 个", "btn_select_all": "🔁 全选", "btn_select_none": "🔁 全取消",
                 "btn_edit_group": "改分组", "btn_edit_logo": "改Logo", "btn_delete": "删除", "btn_exit": "退出", "btn_cancel": "取消", "btn_confirm": "确定",
                 "btn_add_prop": "+ 属性", "modal_file_title": "文件处理", "modal_file_desc": "文件读取成功！是否继续？", "modal_edit_title": "编辑资料", "modal_batch_title": "批量修改",
-                "modal_batch_label": "请输入新值", "status_valid": "✅ 有效", "status_warn": "⚠️ 可能有效", "status_invalid": "❌ 无效", "placeholder_url": "在此粘贴链接..."
+                "modal_batch_label": "请输入新值", "status_valid": "✅ 解析成功", "status_warn": "⚠️ 可能有效", "status_invalid": "❌ 解析失败", "placeholder_url": "在此粘贴链接...",
+                "lbl_title": "标题", "lbl_source": "来源", "lbl_duration": "时长", "lbl_quality": "可用画质/格式", "lbl_raw": "原始流", "lbl_unknown": "未知", "err_network": "网络或API错误"
             },
             "en": {
                 "app_title": "M3U/M3U8 Web Toolbox", "sidebar_title": "Toolbox Menu",
-                "menu_tester": "📺 Stream Tester", "menu_capture": "🔗 Stream Capture Test", "menu_editor": "📝 Playlist Editor", "menu_checker": "📡 Stream Checker", "menu_converter": "🔄 Format Converter",
-                "title_tester": "M3U/M3U8 Stream Tester", "btn_play": "Play", "status_ready": "Ready to play", "tips_tester_content": "This tool is only for testing link <b>connectivity</b> and <b>initial loading</b>.<br>Note: Some streams may fail to play due to <b>CORS</b> restrictions or may have buffering errors when seeking. This is usually a server restriction, not a tool fault.",
-                "title_capture": "Stream Capture Test (yt-dlp)", "btn_test_link": "Test Link", "msg_analyzing": "Analyzing in cloud...",
-                "title_editor": "Playlist Editor", "desc_editor": "1. <b>Modes</b>: Text, Visual List, and Grid View with drag & drop.<br>2. <b>Batch</b>: Use Grid View to batch edit groups/logos.<br>3. <b>Performance</b>: Runs locally. Recommended for files under <b>10MB</b>.",
-                "upload_text": "Click or Drag File Here", "btn_select_file": "Select File",
+                "menu_tester": "📺 Stream Tester", "menu_capture": "🔗 Stream Capture", "menu_editor": "📝 Playlist Editor", "menu_checker": "📡 Stream Checker", "menu_converter": "🔄 Converter",
+                "title_tester": "Stream Tester", "btn_play": "Play", "status_ready": "Ready", "tips_tester_content": "Testing for <b>connectivity</b> only.<br>Note: Failures may be due to <b>CORS</b> restrictions on the source server, not this tool.",
+                "title_capture": "Stream Capture (yt-dlp)", "btn_test_link": "Test Link", "msg_analyzing": "Analyzing in cloud...",
+                "tips_capture_content": "<b>Use:</b> extract M3U8/Direct links from sites (YouTube, Twitch, etc) via yt-dlp.<br><br><b>⚠️ Success Rate:</b><br>1. <b>Blocking</b>: Major sites block cloud IPs (AWS/Vercel).<br>2. <b>Solution</b>: Highly recommend <b>Local Deployment</b> (Termux/Home Server).<br>3. <b>Tip</b>: Retry 2-3 times if failed.",
+                "title_editor": "Playlist Editor", "desc_editor": "1. <b>Views</b>: Text, List, Grid.<br>2. <b>Batch</b>: Edit groups/logos in Grid view.<br>3. <b>Perf</b>: Local processing. Keep under <b>10MB</b>.",
+                "upload_text": "Click or Drag File", "btn_select_file": "Select File",
                 "mode_text": "📄 Text", "mode_list": "☰ List", "mode_grid": "▦ Grid",
-                "btn_batch": "✅ Batch", "btn_add": "➕ Add", "btn_save": "💾 Save", "btn_discard": "❌ Discard Changes",
+                "btn_batch": "✅ Batch", "btn_add": "➕ Add", "btn_save": "💾 Save", "btn_discard": "❌ Discard",
                 "title_checker": "Stream Checker", "tips_title": "📢 Info",
-                "tips_checker_content": "1. <b>Smart Probe</b>: Retries with 'No-CORS' if failed.<br>2. <b>⚠️ Likely Valid</b>: Server is alive but blocked by browser policy.<br>3. <b>❌ Invalid</b>: Connection refused/timeout.",
-                "upload_checker_text": "Import Playlist to Check", "label_batch_check": "Batch Check", "btn_start_check": "▶ Start Check", "btn_reset": "🔄 Reset",
-                "title_converter": "Format Converter", "desc_converter": "1. <b>Smart Parsing</b>: Detects M3U/TXT format automatically.<br>2. <b>TiviMate</b>: Adds <code>tvg-id</code> for EPG support.<br>3. <b>TXT</b>: Simple 'Name,URL' format.",
-                "upload_converter_text": "Import Playlist", "label_file_read": "📂 File Loaded", "label_channel_count": "Valid Channels:", "label_select_format": "Target Format:",
-                "fmt_m3u_desc": "Standard format", "fmt_txt": "TXT File", "fmt_txt_desc": "Comma separated", "fmt_json_desc": "For developers", "fmt_tivi_desc": "For TiviMate",
+                "tips_checker_content": "1. <b>Smart Probe</b>: Retries with 'No-CORS'.<br>2. <b>⚠️ Likely Valid</b>: Server reachable but blocked by browser.<br>3. <b>❌ Invalid</b>: Connection refused.",
+                "upload_checker_text": "Import Playlist", "label_batch_check": "Batch Check", "btn_start_check": "▶ Start", "btn_reset": "🔄 Reset",
+                "title_converter": "Format Converter", "desc_converter": "1. <b>Smart Parse</b>: Auto-detects M3U/TXT.<br>2. <b>TiviMate</b>: Adds <code>tvg-id</code>.<br>3. <b>TXT</b>: 'Name,URL' format.",
+                "upload_converter_text": "Import File", "label_file_read": "📂 Loaded", "label_channel_count": "Channels:", "label_select_format": "Target Format:",
+                "fmt_m3u_desc": "Standard M3U", "fmt_txt": "TXT File", "fmt_txt_desc": "Comma separated", "fmt_json_desc": "JSON Data", "fmt_tivi_desc": "For TiviMate",
                 "btn_reupload": "↩️ Re-upload", "batch_selected": "Selected 0", "btn_select_all": "🔁 All", "btn_select_none": "🔁 None",
                 "btn_edit_group": "Group", "btn_edit_logo": "Logo", "btn_delete": "Delete", "btn_exit": "Exit", "btn_cancel": "Cancel", "btn_confirm": "Confirm",
-                "btn_add_prop": "+ Prop", "modal_file_title": "File Loaded", "modal_file_desc": "Read successfully! Proceed?", "modal_edit_title": "Edit Channel", "modal_batch_title": "Batch Edit",
-                "modal_batch_label": "Enter new value", "status_valid": "✅ Valid", "status_warn": "⚠️ Likely Valid", "status_invalid": "❌ Invalid", "placeholder_url": "Paste URL here..."
+                "btn_add_prop": "+ Prop", "modal_file_title": "File Loaded", "modal_file_desc": "Proceed?", "modal_edit_title": "Edit Channel", "modal_batch_title": "Batch Edit",
+                "modal_batch_label": "New Value", "status_valid": "✅ Success", "status_warn": "⚠️ Likely Valid", "status_invalid": "❌ Failed", "placeholder_url": "Paste URL here...",
+                "lbl_title": "Title", "lbl_source": "Source", "lbl_duration": "Duration", "lbl_quality": "Formats", "lbl_raw": "Raw Stream", "lbl_unknown": "Unknown", "err_network": "Network/API Error"
             },
             "ja": {
                 "app_title": "M3U/M3U8 ツールボックス", "sidebar_title": "メニュー",
                 "menu_tester": "📺 リンクテスト", "menu_capture": "🔗 キャプチャテスト", "menu_editor": "📝 編集ツール", "menu_checker": "📡 一括チェッカー", "menu_converter": "🔄 形式変換",
-                "title_tester": "ストリームテスト", "btn_play": "再生", "status_ready": "準備完了", "tips_tester_content": "リンクの<b>接続性</b>と<b>初期読み込み</b>をテストします。<br>注意：<b>CORS（クロスオリジン）</b>制限により再生できない場合や、シーク時にエラーが発生することがありますが、これはサーバー側の制限です。",
+                "title_tester": "ストリームテスト", "btn_play": "再生", "status_ready": "準備完了", "tips_tester_content": "リンクの<b>接続性</b>をテストします。<br>注意：<b>CORS</b>制限により再生できない場合があります。",
                 "title_capture": "サイトキャプチャ (yt-dlp)", "btn_test_link": "テスト", "msg_analyzing": "解析中...",
-                "title_editor": "プレイリスト編集", "desc_editor": "1. <b>モード</b>: テキスト、リスト、グリッド（ドラッグ対応）。<br>2. <b>一括</b>: グリッドでグループ/ロゴを一括編集。<br>3. <b>性能</b>: ローカル処理。<b>10MB</b>以下のファイルを推奨。",
-                "upload_text": "ファイルを選択またはドラッグ", "btn_select_file": "ファイル選択",
+                "tips_capture_content": "<b>用途:</b> yt-dlpを使用して動画サイトからM3U8を抽出。<br><br><b>⚠️ 注意:</b><br>1. <b>ブロック</b>: 大手サイトはクラウドIPをブロックします。<br>2. <b>解決策</b>: <b>ローカル環境</b>（Termux等）での実行を推奨。<br>3. <b>コツ</b>: 失敗時は数回再試行してください。",
+                "title_editor": "プレイリスト編集", "desc_editor": "1. <b>モード</b>: テキスト/リスト/グリッド。<br>2. <b>一括</b>: グリッドで一括編集。<br>3. <b>性能</b>: <b>10MB</b>以下を推奨。",
+                "upload_text": "ファイルを選択", "btn_select_file": "選択",
                 "mode_text": "📄 テキスト", "mode_list": "☰ リスト", "mode_grid": "▦ グリッド",
-                "btn_batch": "✅ 選択", "btn_add": "➕ 追加", "btn_save": "💾 保存", "btn_discard": "❌ 破棄して再開",
+                "btn_batch": "✅ 選択", "btn_add": "➕ 追加", "btn_save": "💾 保存", "btn_discard": "❌ 破棄",
                 "title_checker": "リンクチェッカー", "tips_title": "📢 情報",
-                "tips_checker_content": "1. <b>スマート検出</b>: 接続失敗時にNo-CORSで再試行。<br>2. <b>⚠️ 可能性あり</b>: サーバー生存を確認（ブラウザ制限あり）。<br>3. <b>❌ 無効</b>: 接続拒否/タイムアウト。",
+                "tips_checker_content": "1. <b>スマート検出</b>: No-CORS再試行。<br>2. <b>⚠️ 可能性あり</b>: ブラウザ制限。<br>3. <b>❌ 無効</b>: 接続拒否。",
                 "upload_checker_text": "ファイルをインポート", "label_batch_check": "一括チェック", "btn_start_check": "▶ 開始", "btn_reset": "🔄 リセット",
-                "title_converter": "フォーマット変換", "desc_converter": "1. <b>自動認識</b>: M3U/TXTを自動解析。<br>2. <b>TiviMate</b>: EPG用に<code>tvg-id</code>を補完。<br>3. <b>TXT</b>: シンプルなカンマ区切り。",
-                "upload_converter_text": "ファイルをインポート", "label_file_read": "📂 読み込み完了", "label_channel_count": "チャンネル数：", "label_select_format": "変換形式：",
-                "fmt_m3u_desc": "標準形式", "fmt_txt": "TXT テキスト", "fmt_txt_desc": "カンマ区切り", "fmt_json_desc": "開発者向け", "fmt_tivi_desc": "TiviMate用",
-                "btn_reupload": "↩️ 再アップロード", "batch_selected": "選択済み 0", "btn_select_all": "🔁 全選択", "btn_select_none": "🔁 全解除",
+                "title_converter": "フォーマット変換", "desc_converter": "1. <b>自動認識</b>: M3U/TXT。<br>2. <b>TiviMate</b>: <code>tvg-id</code>補完。<br>3. <b>TXT</b>: カンマ区切り。",
+                "upload_converter_text": "ファイルをインポート", "label_file_read": "📂 完了", "label_channel_count": "チャンネル数：", "label_select_format": "変換形式：",
+                "fmt_m3u_desc": "標準形式", "fmt_txt": "TXT テキスト", "fmt_txt_desc": "カンマ区切り", "fmt_json_desc": "JSON", "fmt_tivi_desc": "TiviMate用",
+                "btn_reupload": "↩️ 再アップロード", "batch_selected": "選択 0", "btn_select_all": "🔁 全選択", "btn_select_none": "🔁 全解除",
                 "btn_edit_group": "グループ", "btn_edit_logo": "ロゴ", "btn_delete": "削除", "btn_exit": "終了", "btn_cancel": "キャンセル", "btn_confirm": "確定",
-                "btn_add_prop": "+ 属性", "modal_file_title": "ファイル処理", "modal_file_desc": "読み込みました。続行しますか？", "modal_edit_title": "詳細編集", "modal_batch_title": "一括編集",
-                "modal_batch_label": "新しい値を入力", "status_valid": "✅ 有効", "status_warn": "⚠️ 可能性あり", "status_invalid": "❌ 無効", "placeholder_url": "リンクを貼り付け..."
-            },
-            // ... (其他语言保留原样，为了节省篇幅这里不再重复，实际使用时请保留完整的 i18nData 对象) ...
+                "btn_add_prop": "+ 属性", "modal_file_title": "確認", "modal_file_desc": "続行しますか？", "modal_edit_title": "詳細編集", "modal_batch_title": "一括編集",
+                "modal_batch_label": "新しい値", "status_valid": "✅ 成功", "status_warn": "⚠️ 可能性あり", "status_invalid": "❌ 失敗", "placeholder_url": "リンクを貼り付け...",
+                "lbl_title": "タイトル", "lbl_source": "ソース", "lbl_duration": "時間", "lbl_quality": "画質/形式", "lbl_raw": "Raw流", "lbl_unknown": "不明", "err_network": "ネットワークエラー"
+            }
         };
 
-        // --- 全局状态 ---
+        // --- 全局变量 ---
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         const confirmModal = document.getElementById('confirmModal');
@@ -557,12 +614,11 @@
         let currentUploadTarget = ''; 
         let currentMode = 'text';
 
-        // --- 初始化：语言 ---
+        // --- 初始化：语言设置 ---
         (function initLang() {
             const sysLang = navigator.language || navigator.userLanguage; 
             if (sysLang.startsWith('zh')) currentLang = 'zh';
             else if (sysLang.startsWith('ja')) currentLang = 'ja';
-            // ... (其他语言检测逻辑保留)
             else currentLang = 'en';
             updatePageLang();
         })();
@@ -587,7 +643,7 @@
         }
         function t(key) { return (i18nData[currentLang] || i18nData['en'])[key] || key; }
 
-        // --- 导航 ---
+        // --- 导航逻辑 ---
         function toggleMenu() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
         function switchTab(id, btn) {
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
@@ -597,7 +653,7 @@
             toggleMenu();
         }
 
-        // --- 核心：捕捉测试功能 (新增) ---
+        // --- 核心：捕捉测试功能 (Test Capture) ---
         async function testCaptureUrl() {
             const input = document.getElementById('captureInput');
             const resultDiv = document.getElementById('captureResult');
@@ -607,15 +663,15 @@
 
             if (!url) { alert(t('placeholder_url')); return; }
 
-            // UI 状态
+            // UI 状态切换
             resultDiv.style.display = 'none';
             loadingDiv.style.display = 'block';
             btn.disabled = true;
             btn.textContent = '...';
 
             try {
-                // 注意：这里需要配合后端 API (/api/check)
-                // 指向手机本地服务器端口 5000
+                // 调用后端 API (Flask 接口)
+                // 注意：这里使用了不带 www 的 HTTPS 域名，这在 HTTPS 模式下是最稳的配置
                 const response = await fetch(`https://satan-iptv-tool.online/api/check?url=${encodeURIComponent(url)}`);
                 const data = await response.json();
 
@@ -623,24 +679,49 @@
                 resultDiv.style.display = 'block';
 
                 if (data.error) {
+                    // 渲染错误卡片
                     resultDiv.innerHTML = `
-                        <div style="color: var(--danger-color); font-weight: bold;">❌ ${t('status_invalid')}</div>
-                        <div style="font-size: 0.9em; color: #888; margin-top:5px;">${data.error}</div>
+                        <div class="result-card" style="border-left-color: var(--danger-color);">
+                            <div class="result-header">
+                                <div class="result-title" style="color: var(--danger-color);">${t('status_invalid')}</div>
+                            </div>
+                            <div style="font-size: 14px; color: #ccc;">${data.error}</div>
+                        </div>
                     `;
                 } else {
-                    let formatsHtml = '<span style="color:#666; font-size:12px;">RAW / Unknown</span>';
+                    // 格式化数据
+                    const title = data.title || t('lbl_unknown');
+                    const extractor = data.extractor || t('lbl_unknown');
+                    const duration = data.duration ? formatDuration(data.duration) : t('lbl_unknown');
+                    
+                    // 提取画质标签
+                    let formatsHtml = `<span class="quality-badge">${t('lbl_raw')}</span>`;
                     if (data.formats && data.formats.length > 0) {
-                        // 简单去重和排序
-                        const qualities = [...new Set(data.formats.map(f => f.format_note || f.resolution || 'RAW'))];
-                        formatsHtml = qualities.map(q => `<span class="quality-badge">${q}</span>`).join('');
+                        const qualities = [...new Set(data.formats.map(f => f.format_note || f.resolution || 'RAW'))]
+                            .filter(q => q && q !== 'unknown');
+                        if (qualities.length > 0) {
+                            formatsHtml = qualities.map(q => `<span class="quality-badge">${q}</span>`).join('');
+                        }
                     }
 
+                    // 渲染成功卡片
                     resultDiv.innerHTML = `
-                        <div style="color: var(--success-color); font-weight: bold; margin-bottom: 10px;">✅ ${t('status_valid')}</div>
-                        <div class="info-row"><span class="info-label">Title:</span> ${data.title}</div>
-                        <div class="info-row"><span class="info-label">Source:</span> ${data.extractor}</div>
-                        <div class="info-row">
-                            <div class="info-label" style="margin-bottom:5px;">Quality:</div>
+                        <div class="result-card">
+                            <div class="result-header">
+                                <div class="result-title">${title}</div>
+                                <div class="result-badge">${t('status_valid')}</div>
+                            </div>
+                            <div class="meta-grid">
+                                <div class="meta-item">
+                                    <span class="meta-label">${t('lbl_source')}</span>
+                                    <span class="meta-value">${extractor}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">${t('lbl_duration')}</span>
+                                    <span class="meta-value">${duration}</span>
+                                </div>
+                            </div>
+                            <div class="format-list-title">${t('lbl_quality')}</div>
                             <div class="quality-badges">${formatsHtml}</div>
                         </div>
                     `;
@@ -649,11 +730,27 @@
             } catch (err) {
                 loadingDiv.style.display = 'none';
                 resultDiv.style.display = 'block';
-                resultDiv.innerHTML = `<div style="color: var(--danger-color);">Network Error (Api Error): ${err.message}</div>`;
+                resultDiv.innerHTML = `
+                    <div class="result-card" style="border-left-color: var(--danger-color);">
+                        <div class="result-header">
+                            <div class="result-title" style="color: var(--danger-color);">${t('err_network')}</div>
+                        </div>
+                        <div style="font-size: 13px; color: #aaa;">${err.message}</div>
+                        <div style="font-size: 12px; color: #666; margin-top:10px;">Check: Network, CORS, or SSL Certificate.</div>
+                    </div>
+                `;
             } finally {
                 btn.disabled = false;
                 btn.textContent = t('btn_test_link');
             }
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '--:--';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
         }
 
         // --- 文件处理逻辑 ---
@@ -665,9 +762,9 @@
             document.getElementById(inputId).click();
         }
 
-        document.getElementById('fileInputEditor').addEventListener('change', (e) => handleFileSelect(e));
-        document.getElementById('fileInputChecker').addEventListener('change', (e) => handleFileSelect(e));
-        document.getElementById('fileInputConverter').addEventListener('change', (e) => handleFileSelect(e));
+        document.getElementById('fileInputEditor').addEventListener('change', handleFileSelect);
+        document.getElementById('fileInputChecker').addEventListener('change', handleFileSelect);
+        document.getElementById('fileInputConverter').addEventListener('change', handleFileSelect);
 
         function handleFileSelect(e) {
             const file = e.target.files[0];
@@ -691,9 +788,11 @@
 
         function closeConfirm(isConfirmed) {
             confirmModal.style.display = 'none';
+            // 清空input防止重复上传不触发change
             document.getElementById('fileInputEditor').value = '';
             document.getElementById('fileInputChecker').value = '';
             document.getElementById('fileInputConverter').value = '';
+            
             if (!isConfirmed) return;
 
             if (currentUploadTarget === 'editor') {
@@ -707,7 +806,7 @@
             else if (currentUploadTarget === 'converter') initConverter(converterData.raw);
         }
 
-        // --- 数据解析 ---
+        // --- 数据解析 (通用) ---
         function extractChannels(rawText) {
             const lines = rawText.split(/\r?\n/);
             const channels = [];
@@ -809,6 +908,7 @@
                     statusEl.className = 'check-status success'; statusEl.textContent = `${t('status_valid')} (${ping}ms)`;
                 } else { throw new Error("HTTP " + res.status); }
             } catch (e) {
+                // 隐私模式探测 (No-CORS)
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -853,6 +953,8 @@
                 document.getElementById('btnCheckAll').textContent = t('btn_start_check');
             }
         }
+
+        // --- 简单播放器逻辑 ---
         document.getElementById('playBtn').addEventListener('click', () => {
             const url = document.getElementById('urlInput').value.trim();
             const v = document.getElementById('video');
@@ -861,11 +963,11 @@
             if(Hls.isSupported()) {
                 const hls = new Hls(); hls.loadSource(url); hls.attachMedia(v);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = "OK"; msg.style.color="#2ba640"; });
-                hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { msg.textContent = "Error"; msg.style.color="#ff4d4d"; } });
+                hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { msg.textContent = "Error: " + d.type; msg.style.color="#ff4d4d"; } });
             } else if (v.canPlayType('application/vnd.apple.mpegurl')) { v.src=url; v.play(); }
         });
 
-        // --- 编辑器核心 ---
+        // --- 编辑器逻辑 ---
         function parseTextToData() {
             const rawText = document.getElementById('codeEditor').value;
             const lines = rawText.split(/\r?\n/);
@@ -1048,6 +1150,7 @@
             toggleBatchMode(false);
         }
 
+        // --- 编辑模态框 ---
         const editModal = document.getElementById('editModal');
         const dynamicForm = document.getElementById('dynamicForm');
         let currentEditIndex = -1;
