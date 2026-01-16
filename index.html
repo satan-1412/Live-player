@@ -412,4 +412,505 @@
                 <div class="check-toolbar">
                     <div style="font-size:14px; font-weight:bold; color: var(--text-color);" data-i18n="label_batch_check">批量检测</div>
                     <div class="progress-bar"><div class="progress-fill" id="checkProgress"></div></div>
-                    <button class="tool-btn primary" id="btnCheckAll" onclick="startCheckAll()" data-i18n="btn_start_check">▶ 开始全测</bu
+                    <button class="tool-btn primary" id="btnCheckAll" onclick="startCheckAll()" data-i18n="btn_start_check">▶ 开始全测</button>
+                </div>
+                <div id="checkList"></div>
+                <div style="text-align:center; margin-top:30px;">
+                    <button onclick="resetChecker()" style="background:none; border:none; color:var(--text-gray); cursor:pointer; font-size:14px;" data-i18n="btn_reset">🔄 清空并重新导入</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-converter" class="section-view">
+            <div class="section-title" data-i18n="title_converter">直播源文件转换</div>
+            <div class="tips-box">
+                <div class="tips-title" data-i18n="tips_title">💡 格式转换指南</div>
+                <span data-i18n="desc_converter">
+                1. <b>智能解析</b>：系统会自动识别输入文件的格式（M3U/TXT）。<br>
+                2. <b>TiviMate</b>：选择 TiviMate 格式时，会自动补充 <code>tvg-id</code>。<br>
+                3. <b>通用性</b>：TXT 格式为“频道名,链接”结构。
+                </span>
+            </div>
+
+            <div id="step-upload-converter">
+                <div class="upload-area" onclick="triggerUpload('converter')">
+                    <input type="file" id="fileInputConverter" hidden accept=".m3u,.m3u8,.txt">
+                    <div style="font-size:40px; margin-bottom:15px;">🔄</div>
+                    <p data-i18n="upload_converter_text">导入任意格式直播源</p>
+                    <button class="btn-upload" data-i18n="btn_select_file">选择文件</button>
+                </div>
+            </div>
+
+            <div id="step-convert-ui" style="display:none;">
+                <div class="tips-box" style="text-align:center; background:rgba(255,255,255,0.05); border-color:var(--border-color);">
+                    <div style="margin-bottom:10px; color:var(--primary-color);" data-i18n="label_file_read">📂 已读取文件</div>
+                    <div id="convertFileName" style="font-weight:bold; color:var(--text-color); font-size:16px;">playlist.m3u</div>
+                    <div style="font-size:13px; color:var(--text-gray); margin-top:8px;"><span data-i18n="label_channel_count">共识别有效频道：</span> <span id="convertCount">0</span></div>
+                </div>
+
+                <p style="text-align:center; margin-top:40px; font-weight:bold; font-size:15px; color:var(--text-color);" data-i18n="label_select_format">请选择目标格式：</p>
+                
+                <div class="format-grid">
+                    <div class="format-btn" onclick="doConvert('m3u')">
+                        <div class="fmt-icon">📄</div>
+                        <div class="fmt-name">M3U / M3U8</div>
+                        <div class="fmt-desc" data-i18n="fmt_m3u_desc">标准格式，支持台标分组</div>
+                    </div>
+                    <div class="format-btn" onclick="doConvert('txt')">
+                        <div class="fmt-icon">📝</div>
+                        <div class="fmt-name" data-i18n="fmt_txt">TXT 文本</div>
+                        <div class="fmt-desc" data-i18n="fmt_txt_desc">简单逗号分隔</div>
+                    </div>
+                    <div class="format-btn" onclick="doConvert('json')">
+                        <div class="fmt-icon">⚙️</div>
+                        <div class="fmt-name">JSON</div>
+                        <div class="fmt-desc" data-i18n="fmt_json_desc">开发人员通用数据格式</div>
+                    </div>
+                    <div class="format-btn" onclick="doConvert('tivimate')">
+                        <div class="fmt-icon">📺</div>
+                        <div class="fmt-name">TiviMate</div>
+                        <div class="fmt-desc" data-i18n="fmt_tivi_desc">优化版M3U，补全tvg-id</div>
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin-top:40px;">
+                    <button onclick="resetConverter()" style="background:none; border:none; color:var(--text-gray); cursor:pointer; font-size:14px;" data-i18n="btn_reupload">↩️ 返回重新上传</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+    <script>
+        const API_BASE = "https://satan-iptv-tool.online/api/check";
+        
+        const i18nData = {
+            "zh": {
+                "app_title": "M3U/M3U8在线工具箱", "sidebar_title": "工具箱菜单",
+                "menu_tester": "📺 在线链接测试", "menu_capture": "🔗 在线网站捕捉测试", "menu_editor": "📝 直播源在线编辑", "menu_checker": "📡 直播源在线检测", "menu_converter": "🔄 直播源文件转换",
+                "title_tester": "M3U/M3U8 链接在线测试", "btn_play": "播放", "status_ready": "准备就绪", "tips_tester_content": "此工具仅用于测试链接的<b>连通性</b>和<b>初始加载</b>。<br>注意：部分流媒体因 <b>CORS（跨域策略）</b> 限制可能无法在浏览器中播放，或者拖动进度条时可能出现缓冲错误，这通常属于源站限制而非工具故障。",
+                "title_capture": "在线网站捕捉测试 (yt-dlp)", "btn_test_link": "测试链接", "msg_analyzing": "正在云端分析中，请耐心等待...",
+                "tips_capture_content": "<b>功能用途：</b>基于 yt-dlp 核心，测试能否从视频网站（YouTube, Twitch, 虎牙等）解析出 M3U8 直播流或真实播放地址。<br><br><b>⚠️ 成功率说明：</b><br>1. <b>反爬封锁</b>：YouTube 等大平台会对“云服务器 IP”进行严格风控。<br>2. <b>解决方案</b>：强烈建议使用<b>“本地部署”</b>（Termux/NAS）或<b>“私人服务器”</b>。<br>3. <b>操作建议</b>：如遇失败，请尝试<b>点击 2-3 次测试</b>或更换节点。",
+                "title_editor": "直播源文件编辑", "desc_editor": "1. <b>操作模式</b>：提供“文本代码”、“可视化列表”和“网格资料”三种视图，支持拖拽排序。<br>2. <b>批量处理</b>：在网格模式下，点击右上角进入批量模式，可快速修改分组名称和台标。<br>3. <b>性能提示</b>：本地浏览器处理。建议处理 <b>10MB</b> 以下文件。",
+                "upload_text": "点击选择或拖拽文件", "btn_select_file": "选择文件",
+                "mode_text": "📄 文本", "mode_list": "☰ 列表", "mode_grid": "▦ 资料",
+                "btn_batch": "✅ 批量选择", "btn_add": "➕ 添加", "btn_save": "💾 保存", "btn_discard": "❌ 放弃修改",
+                "title_checker": "直播源在线检测", "tips_title": "📢 说明",
+                "tips_checker_content": "1. <b>智能探测</b>：优先前端直连，失败自动转后端。<br>2. <b>⚠️ 可能有效</b>：服务器连通但被浏览器拦截，通过后端验证。<br>3. <b>❌ 无效</b>：双端验证均失败。",
+                "upload_checker_text": "导入直播源文件进行检测", "label_batch_check": "批量检测", "btn_start_check": "▶ 开始全测", "btn_reset": "🔄 清空并重新导入",
+                "title_converter": "直播源文件转换", "desc_converter": "1. <b>智能解析</b>：系统会自动识别输入文件的格式（M3U/TXT）。<br>2. <b>TiviMate</b>：选择 TiviMate 格式时，会自动补充 <code>tvg-id</code>。<br>3. <b>通用性</b>：TXT 格式为“频道名,链接”结构。",
+                "upload_converter_text": "导入任意格式直播源", "label_file_read": "📂 已读取文件", "label_channel_count": "共识别有效频道：", "label_select_format": "请选择目标格式：",
+                "fmt_m3u_desc": "标准格式，支持台标分组", "fmt_txt": "TXT 文本", "fmt_txt_desc": "简单逗号分隔", "fmt_json_desc": "开发人员通用数据格式", "fmt_tivi_desc": "优化版M3U，补全tvg-id",
+                "btn_reupload": "↩️ 返回重新上传", "batch_selected": "已选 0 个", "btn_select_all": "🔁 全选", "btn_select_none": "🔁 全取消",
+                "btn_edit_group": "改分组", "btn_edit_logo": "改Logo", "btn_delete": "删除", "btn_exit": "退出", "btn_cancel": "取消", "btn_confirm": "确定",
+                "btn_add_prop": "+ 属性", "modal_file_title": "文件处理", "modal_file_desc": "文件读取成功！是否继续？", "modal_edit_title": "编辑资料", "modal_batch_title": "批量修改",
+                "modal_batch_label": "请输入新值", "status_valid": "✅ 解析成功", "status_warn": "⚠️ 可能有效", "status_invalid": "❌ 解析失败", "placeholder_url": "在此粘贴链接...",
+                "lbl_title": "标题", "lbl_source": "来源", "lbl_duration": "时长", "lbl_quality": "可用画质/格式", "lbl_raw": "原始流", "lbl_unknown": "未知", "err_network": "网络或API错误"
+            },
+            "en": {
+                "app_title": "M3U/M3U8 Web Toolbox", "sidebar_title": "Toolbox Menu",
+                "menu_tester": "📺 Stream Tester", "menu_capture": "🔗 Stream Capture", "menu_editor": "📝 Playlist Editor", "menu_checker": "📡 Stream Checker", "menu_converter": "🔄 Converter",
+                "title_tester": "Stream Tester", "btn_play": "Play", "status_ready": "Ready", "tips_tester_content": "Testing for <b>connectivity</b> only.<br>Note: Failures may be due to <b>CORS</b> restrictions on the source server, not this tool.",
+                "title_capture": "Stream Capture (yt-dlp)", "btn_test_link": "Test Link", "msg_analyzing": "Analyzing in cloud...",
+                "tips_capture_content": "<b>Use:</b> extract M3U8/Direct links from sites (YouTube, Twitch, etc) via yt-dlp.<br><br><b>⚠️ Success Rate:</b><br>1. <b>Blocking</b>: Major sites block cloud IPs (AWS/Vercel).<br>2. <b>Solution</b>: Highly recommend <b>Local Deployment</b> (Termux/Home Server).<br>3. <b>Tip</b>: Retry 2-3 times if failed.",
+                "title_editor": "Playlist Editor", "desc_editor": "1. <b>Views</b>: Text, List, Grid.<br>2. <b>Batch</b>: Edit groups/logos in Grid view.<br>3. <b>Perf</b>: Local processing. Keep under <b>10MB</b>.",
+                "upload_text": "Click or Drag File", "btn_select_file": "Select File",
+                "mode_text": "📄 Text", "mode_list": "☰ List", "mode_grid": "▦ Grid",
+                "btn_batch": "✅ Batch", "btn_add": "➕ Add", "btn_save": "💾 Save", "btn_discard": "❌ Discard",
+                "title_checker": "Stream Checker", "tips_title": "📢 Info",
+                "tips_checker_content": "1. <b>Smart Probe</b>: Frontend first, then Backend.<br>2. <b>⚠️ Likely Valid</b>: Server reachable via Backend.<br>3. <b>❌ Invalid</b>: Failed on both.",
+                "upload_checker_text": "Import Playlist", "label_batch_check": "Batch Check", "btn_start_check": "▶ Start", "btn_reset": "🔄 Reset",
+                "title_converter": "Format Converter", "desc_converter": "1. <b>Smart Parse</b>: Auto-detects M3U/TXT.<br>2. <b>TiviMate</b>: Adds <code>tvg-id</code>.<br>3. <b>TXT</b>: 'Name,URL' format.",
+                "upload_converter_text": "Import File", "label_file_read": "📂 Loaded", "label_channel_count": "Channels:", "label_select_format": "Target Format:",
+                "fmt_m3u_desc": "Standard M3U", "fmt_txt": "TXT File", "fmt_txt_desc": "Comma separated", "fmt_json_desc": "JSON Data", "fmt_tivi_desc": "For TiviMate",
+                "btn_reupload": "↩️ Re-upload", "batch_selected": "Selected 0", "btn_select_all": "🔁 All", "btn_select_none": "🔁 None",
+                "btn_edit_group": "Group", "btn_edit_logo": "Logo", "btn_delete": "Delete", "btn_exit": "Exit", "btn_cancel": "Cancel", "btn_confirm": "Confirm",
+                "btn_add_prop": "+ Prop", "modal_file_title": "File Loaded", "modal_file_desc": "Proceed?", "modal_edit_title": "Edit Channel", "modal_batch_title": "Batch Edit",
+                "modal_batch_label": "New Value", "status_valid": "✅ Success", "status_warn": "⚠️ Likely Valid", "status_invalid": "❌ Failed", "placeholder_url": "Paste URL here...",
+                "lbl_title": "Title", "lbl_source": "Source", "lbl_duration": "Duration", "lbl_quality": "Formats", "lbl_raw": "Raw Stream", "lbl_unknown": "Unknown", "err_network": "Network/API Error"
+            }
+        };
+
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const confirmModal = document.getElementById('confirmModal');
+        
+        let currentLang = 'en';
+        let editorData = { buffer: '', name: 'playlist.m3u', channelData: [] };
+        let checkerData = { channels: [] };
+        let converterData = { channels: [], name: '' };
+        
+        let isBatchMode = false;
+        let selectedIndices = new Set();
+        let currentBatchType = '';
+        let currentUploadTarget = ''; 
+        let currentMode = 'text';
+
+        (function initLang() {
+            const sysLang = navigator.language || navigator.userLanguage; 
+            currentLang = sysLang.startsWith('zh') ? 'zh' : 'en';
+            updatePageLang();
+        })();
+
+        function updatePageLang() {
+            const data = i18nData[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (data[key]) {
+                    if (key.includes('content') || key.includes('desc')) el.innerHTML = data[key];
+                    else el.textContent = data[key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (data[key]) el.placeholder = data[key];
+            });
+        }
+        function t(key) { return i18nData[currentLang][key] || key; }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'light') { body.removeAttribute('data-theme'); } 
+            else { body.setAttribute('data-theme', 'light'); }
+        }
+
+        function toggleMenu() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
+        function switchTab(id, btn) {
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.section-view').forEach(el => el.classList.remove('active'));
+            document.getElementById('section-'+id).classList.add('active');
+            toggleMenu();
+        }
+
+        async function testCaptureUrl() {
+            const input = document.getElementById('captureInput');
+            const resultDiv = document.getElementById('captureResult');
+            const loadingDiv = document.getElementById('captureLoading');
+            const btn = document.getElementById('captureBtn');
+            const url = input.value.trim();
+            if (!url) { alert(t('placeholder_url')); return; }
+            resultDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const response = await fetch(`${API_BASE}?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="result-card" style="border-left-color: var(--danger-color);"><div class="result-header"><div class="result-title" style="color: var(--danger-color);">${t('status_invalid')}</div></div><div style="font-size: 14px; color: var(--text-gray);">${data.error}</div></div>`;
+                } else {
+                    const title = data.title || t('lbl_unknown');
+                    const extractor = data.extractor || t('lbl_unknown');
+                    const duration = data.duration ? formatDuration(data.duration) : t('lbl_unknown');
+                    let thumbHtml = data.thumbnail ? `<div class="result-thumb-box" style="display:block"><img src="${data.thumbnail}" class="result-thumb"></div>` : '';
+                    let formatsHtml = `<span class="quality-badge">${t('lbl_raw')}</span>`;
+                    if (data.formats && data.formats.length > 0) {
+                        const uniqueFormats = []; const seen = new Set();
+                        data.formats.forEach(f => {
+                            const label = f.format_note || f.resolution || 'UNK';
+                            if (!seen.has(label)) { seen.add(label); uniqueFormats.push(f); }
+                        });
+                        formatsHtml = uniqueFormats.map(f => {
+                            const isAudio = f.is_audio || (f.format_note && f.format_note.includes('Audio'));
+                            const style = isAudio ? 'border-color:#2ba640; color:#2ba640; background:rgba(43,166,64,0.1);' : '';
+                            return `<span class="quality-badge" style="${style}" onclick="window.open('${f.url}')">${f.format_note || f.resolution}</span>`;
+                        }).join('');
+                    }
+                    resultDiv.innerHTML = `<div class="result-card">${thumbHtml}<div class="result-header"><div class="result-title">${title}</div><div class="result-badge">${t('status_valid')}</div></div><div class="meta-grid"><div class="meta-item"><span class="meta-label">${t('lbl_source')}</span><span class="meta-value">${extractor}</span></div><div class="meta-item"><span class="meta-label">${t('lbl_duration')}</span><span class="meta-value">${duration}</span></div></div><div class="format-list-title">${t('lbl_quality')}</div><div class="quality-badges">${formatsHtml}</div></div>`;
+                }
+            } catch (err) {
+                loadingDiv.style.display = 'none'; resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<div class="result-card" style="border-left-color: var(--danger-color);"><div class="result-header"><div class="result-title" style="color: var(--danger-color);">${t('err_network')}</div></div><div style="font-size: 13px; color: var(--text-gray);">${err.message}</div></div>`;
+            } finally { btn.disabled = false; btn.textContent = t('btn_test_link'); }
+        }
+        function formatDuration(s) { if (!s) return '--:--'; const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60); return h>0 ? `${h}h ${m}m ${sec}s` : `${m}m ${sec}s`; }
+
+        function triggerUpload(target) {
+            currentUploadTarget = target;
+            let inputId = target==='editor'?'fileInputEditor':(target==='checker'?'fileInputChecker':'fileInputConverter');
+            document.getElementById(inputId).click();
+        }
+        document.getElementById('fileInputEditor').addEventListener('change', handleFileSelect);
+        document.getElementById('fileInputChecker').addEventListener('change', handleFileSelect);
+        document.getElementById('fileInputConverter').addEventListener('change', handleFileSelect);
+        function handleFileSelect(e) {
+            const file = e.target.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const content = evt.target.result;
+                if(currentUploadTarget==='editor') { editorData.buffer = content; editorData.name = file.name; }
+                else if(currentUploadTarget==='checker') checkerData.raw = content;
+                else { converterData.raw = content; converterData.name = file.name; }
+                document.getElementById('confirmText').textContent = t('modal_file_desc');
+                confirmModal.style.display = 'flex';
+            }; reader.readAsText(file); e.target.value = '';
+        }
+        function closeConfirm(isConfirmed) {
+            confirmModal.style.display = 'none';
+            if (!isConfirmed) return;
+            if (currentUploadTarget === 'editor') {
+                document.getElementById('codeEditor').value = editorData.buffer;
+                document.getElementById('step-upload-editor').style.display = 'none';
+                document.getElementById('step-edit-ui').style.display = 'block';
+                currentMode = 'text'; setMode('text'); parseTextToData();
+            } else if (currentUploadTarget === 'checker') initChecker(checkerData.raw);
+            else if (currentUploadTarget === 'converter') initConverter(converterData.raw);
+        }
+
+        function extractChannels(rawText) {
+            const lines = rawText.split(/\r?\n/); const channels = []; let current = null;
+            lines.forEach(line => {
+                line = line.trim();
+                if(line.startsWith('#EXTINF:')) {
+                    const params = {}; const nameMatch = line.match(/,(.+)$/); const name = nameMatch ? nameMatch[1].trim() : 'Unknown';
+                    const regex = /([a-zA-Z0-9-]+)="([^"]*)"/g; let match;
+                    while ((match = regex.exec(line)) !== null) params[match[1]] = match[2];
+                    current = { name, params };
+                } else if (line && !line.startsWith('#') && isUrl(line)) {
+                    if(current) { current.url = line; channels.push(current); current = null; }
+                    else channels.push({ name: 'Unknown', url: line, params: {} });
+                }
+            }); return channels;
+        }
+        function isUrl(str) { const s = str.toLowerCase(); return s.startsWith('http') || s.startsWith('rtmp') || s.startsWith('rtsp') || s.startsWith('udp') || s.startsWith('mms'); }
+
+        function initConverter(rawText) {
+            document.getElementById('step-upload-converter').style.display = 'none';
+            document.getElementById('step-convert-ui').style.display = 'block';
+            converterData.channels = extractChannels(rawText);
+            document.getElementById('convertFileName').textContent = converterData.name;
+            document.getElementById('convertCount').textContent = converterData.channels.length;
+        }
+        function doConvert(format) {
+            const channels = converterData.channels; let content = "", ext = "";
+            if (format === 'm3u' || format === 'tivimate') {
+                content = "#EXTM3U\n";
+                channels.forEach(ch => {
+                    let p = ch.params || {}; if (format === 'tivimate' && !p['tvg-id']) p['tvg-id'] = ch.name;
+                    let line = '#EXTINF:-1'; for(let k in p) line += ` ${k}="${p[k]}"`;
+                    content += `${line},${ch.name}\n${ch.url}\n`;
+                }); ext = ".m3u";
+            } else if (format === 'txt') {
+                channels.forEach(ch => content += `${ch.name},${ch.url}\n`); ext = ".txt";
+            } else if (format === 'json') { content = JSON.stringify(channels, null, 2); ext = ".json"; }
+            const blob = new Blob([content], {type: "text/plain;charset=utf-8"});
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+            a.download = converterData.name.replace(/\.[^/.]+$/, "") + "_converted" + ext; a.click();
+        }
+        function resetConverter() { document.getElementById('step-convert-ui').style.display = 'none'; document.getElementById('step-upload-converter').style.display = 'block'; }
+
+        function initChecker(rawText) {
+            document.getElementById('step-upload-checker').style.display = 'none';
+            document.getElementById('step-check-ui').style.display = 'block';
+            checkerData.channels = extractChannels(rawText);
+            renderCheckList();
+        }
+        function renderCheckList() {
+            const container = document.getElementById('checkList'); container.innerHTML = '';
+            checkerData.channels.forEach((ch, index) => {
+                const div = document.createElement('div'); div.className = 'check-item'; div.id = `check-item-${index}`;
+                div.innerHTML = `<div class="check-info"><div class="check-name">${ch.name}</div><div class="check-url">${ch.url}</div></div><div class="check-status" id="status-${index}"></div><button class="btn-test" onclick="checkOne(${index})">Test</button>`;
+                container.appendChild(div);
+            });
+        }
+        async function checkOne(index) {
+            const ch = checkerData.channels[index];
+            const statusEl = document.getElementById(`status-${index}`);
+            const btn = document.querySelector(`#check-item-${index} .btn-test`);
+            statusEl.className = 'check-status testing'; statusEl.textContent = '...'; btn.disabled = true;
+            try {
+                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const res = await fetch(ch.url, { method: 'HEAD', signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (res.ok) {
+                    statusEl.className = 'check-status success'; statusEl.textContent = "✅ 有效 (前端)";
+                    btn.disabled = false; return;
+                } else throw new Error();
+            } catch (e) {
+                statusEl.textContent = "🔄 后端检测...";
+                try {
+                    const res = await fetch(`${API_BASE}?url=${encodeURIComponent(ch.url)}`);
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        statusEl.className = 'check-status success'; statusEl.textContent = "✅ 有效 (后端)";
+                    } else { throw new Error(); }
+                } catch (err) {
+                    statusEl.className = 'check-status error'; statusEl.textContent = "❌ 失效";
+                }
+            }
+            btn.disabled = false;
+        }
+        async function startCheckAll() {
+            const btn = document.getElementById('btnCheckAll'); if(btn.disabled) return;
+            btn.disabled = true; let completed = 0; const total = checkerData.channels.length;
+            const queue = [...checkerData.channels.map((_, i) => i)];
+            const worker = async () => {
+                while (queue.length > 0) {
+                    const idx = queue.shift(); await checkOne(idx); completed++;
+                    document.getElementById('checkProgress').style.width = Math.round((completed / total) * 100) + '%';
+                }
+            };
+            await Promise.all(Array(5).fill(null).map(() => worker()));
+            btn.disabled = false;
+        }
+        function resetChecker() {
+            if(confirm('Reset?')) {
+                document.getElementById('step-check-ui').style.display = 'none';
+                document.getElementById('step-upload-checker').style.display = 'block';
+                document.getElementById('fileInputChecker').value = '';
+                document.getElementById('checkProgress').style.width = '0%';
+            }
+        }
+
+        document.getElementById('playBtn').addEventListener('click', () => {
+            const url = document.getElementById('urlInput').value.trim();
+            const v = document.getElementById('video'); const msg = document.getElementById('statusMsg');
+            if(!url) return;
+            if(Hls.isSupported()) {
+                const hls = new Hls(); hls.loadSource(url); hls.attachMedia(v);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => { v.play(); msg.textContent = "OK"; msg.style.color="#2ba640"; });
+                hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { msg.textContent = "Error: " + d.type; msg.style.color="#ff4d4d"; } });
+            } else if (v.canPlayType('application/vnd.apple.mpegurl')) { v.src=url; v.play(); }
+        });
+
+        function parseTextToData() {
+            const lines = document.getElementById('codeEditor').value.split(/\r?\n/);
+            editorData.channelData = []; let currentBlock = null;
+            lines.forEach(line => {
+                const trimLine = line.trim();
+                if (trimLine.startsWith('#EXTINF:')) {
+                    if (currentBlock) editorData.channelData.push(currentBlock);
+                    currentBlock = { type: 'unknown', lines: [line], url: '', params: {} };
+                    const nameMatch = line.match(/,(.+)$/);
+                    currentBlock.params['name'] = nameMatch ? nameMatch[1].trim() : 'Unknown';
+                    const regex = /([a-zA-Z0-9-]+)="([^"]*)"/g; let match;
+                    while ((match = regex.exec(line)) !== null) currentBlock.params[match[1]] = match[2];
+                } else if (currentBlock && currentBlock.type === 'unknown' && isUrl(trimLine)) {
+                    currentBlock.type = 'channel'; currentBlock.url = trimLine; currentBlock.lines.push(line);
+                    editorData.channelData.push(currentBlock); currentBlock = null; 
+                } else {
+                    if (currentBlock && currentBlock.type === 'unknown') currentBlock.lines.push(line);
+                    else {
+                        if (!currentBlock) currentBlock = { type: 'raw', lines: [line] };
+                        else if (currentBlock.type === 'raw') currentBlock.lines.push(line);
+                        else { editorData.channelData.push(currentBlock); currentBlock = { type: 'raw', lines: [line] }; }
+                    }
+                }
+            });
+            if (currentBlock) editorData.channelData.push(currentBlock);
+        }
+        function syncDataToText() { document.getElementById('codeEditor').value = editorData.channelData.map(b => b.lines.join('\n')).join('\n'); }
+        function updateChannelLines(block) {
+            if (block.type !== 'channel') return;
+            let newExtinf = '#EXTINF:-1';
+            for (let key in block.params) { if (key !== 'name') newExtinf += ` ${key}="${block.params[key]}"`; }
+            block.lines = [`${newExtinf},${block.params['name']}`, block.url];
+        }
+        function setMode(mode) {
+            if (mode === currentMode) return;
+            if(isBatchMode) toggleBatchMode(false);
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            if (currentMode === 'text') parseTextToData(); else if (mode === 'text') syncDataToText();
+            document.getElementById('codeEditor').style.display = mode === 'text' ? 'block' : 'none';
+            document.getElementById('visualEditor').style.display = mode === 'visual' ? 'block' : 'none';
+            document.getElementById('gridEditor').style.display = mode === 'grid' ? 'grid' : 'none';
+            document.getElementById('btnAddTemplate').style.display = mode === 'text' ? 'flex' : 'none';
+            document.getElementById('btnBatch').style.display = mode === 'grid' ? 'flex' : 'none';
+            document.getElementById('btnMode'+mode.charAt(0).toUpperCase()+mode.slice(1)).classList.add('active');
+            if(mode !== 'text') { if (mode==='visual') renderVisualList(); else renderGrid(); }
+            currentMode = mode; 
+        }
+        function renderVisualList() {
+            const list = document.getElementById('visualEditor'); list.innerHTML = '';
+            editorData.channelData.forEach((item, index) => {
+                if (item.type !== 'channel') return;
+                const li = document.createElement('li'); li.className = 'channel-item';
+                li.innerHTML = `<div class="channel-info"><div class="ch-name">${item.params.name}</div><div class="ch-url">${item.url}</div></div><div class="drag-handle">☰</div>`;
+                list.appendChild(li);
+            });
+            if(!list.sortable) {
+                list.sortable = Sortable.create(list, { 
+                    handle:'.drag-handle', 
+                    animation: 300,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    onEnd: (evt) => {
+                        const blocks = [...editorData.channelData];
+                        const channelsOnly = blocks.filter(b => b.type === 'channel');
+                        const [moved] = channelsOnly.splice(evt.oldIndex, 1);
+                        channelsOnly.splice(evt.newIndex, 0, moved);
+                        let cIdx = 0;
+                        editorData.channelData = blocks.map(b => b.type === 'channel' ? channelsOnly[cIdx++] : b);
+                        syncDataToText();
+                    }
+                });
+            }
+        }
+        function renderGrid() {
+            const grid = document.getElementById('gridEditor'); grid.innerHTML = '';
+            editorData.channelData.forEach((item, index) => {
+                if (item.type !== 'channel') return;
+                const card = document.createElement('div'); card.className = 'grid-card';
+                if (isBatchMode) { card.classList.add('selecting'); if (selectedIndices.has(index)) card.classList.add('selected'); }
+                card.onclick = () => { if(isBatchMode) { if(selectedIndices.has(index)) selectedIndices.delete(index); else selectedIndices.add(index); renderGrid(); updateBatchUI(); } else openEditModal(index); };
+                const logo = item.params['tvg-logo']; const group = item.params['group-title'] || '';
+                const imgHtml = logo ? `<img src="${logo}" class="card-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
+                card.innerHTML = `<div class="check-circle"></div><div class="card-img-box">${imgHtml}<div class="card-placeholder" ${logo?'style="display:none"':''}>${item.params.name[0]}</div></div><div class="card-info"><div class="card-tag">${group}</div><div class="card-name">${item.params.name}</div></div>`;
+                grid.appendChild(card);
+            });
+        }
+        function toggleBatchMode(forceState) {
+            isBatchMode = forceState !== undefined ? forceState : !isBatchMode; selectedIndices.clear();
+            const btn = document.getElementById('btnBatch'); const bar = document.getElementById('batchBar');
+            if (isBatchMode) { btn.classList.add('active'); btn.textContent = '❌'; bar.style.display = 'flex'; updateBatchUI(); }
+            else { btn.classList.remove('active'); btn.textContent = t('btn_batch'); bar.style.display = 'none'; }
+            renderGrid();
+        }
+        function updateBatchUI() { document.getElementById('batchCount').textContent = `${t('batch_selected')}: ${selectedIndices.size}`; document.getElementById('btnSelectAll').textContent = (selectedIndices.size > 0) ? t('btn_select_none') : t('btn_select_all'); }
+        function toggleSelectAll() {
+            const valid = []; editorData.channelData.forEach((item,i) => {if(item.type==='channel') valid.push(i)});
+            if (selectedIndices.size > 0) selectedIndices.clear(); else valid.forEach(i => selectedIndices.add(i));
+            renderGrid(); updateBatchUI();
+        }
+        function openBatchEdit(type) { if (selectedIndices.size === 0) return alert('Empty'); currentBatchType = type; document.getElementById('batchInput').value=''; document.getElementById('batchInputModal').style.display='flex'; }
+        function applyBatchEdit() {
+            const val = document.getElementById('batchInput').value.trim(); const key = currentBatchType==='group'?'group-title':'tvg-logo';
+            selectedIndices.forEach(idx => { const item = editorData.channelData[idx]; if(val) item.params[key]=val; else delete item.params[key]; updateChannelLines(item); });
+            document.getElementById('batchInputModal').style.display='none'; toggleBatchMode(false);
+        }
+        function batchDelete() {
+            if (selectedIndices.size === 0) return alert('Empty'); if (!confirm('Delete?')) return;
+            const sorted = Array.from(selectedIndices).sort((a,b)=>b-a); sorted.forEach(i => editorData.channelData.splice(i,1));
+            toggleBatchMode(false);
+        }
+        const editModal = document.getElementById('editModal'); const dynamicForm = document.getElementById('dynamicForm'); let currentEditIndex = -1;
+        function openEditModal(index) {
+            currentEditIndex = index; const item = editorData.channelData[index]; dynamicForm.innerHTML = '';
+            createInput('Name', 'name', item.params['name']); createInput('URL', 'url', item.url);
+            for (let key in item.params) { if (key!=='name') createInput(key, key, item.params[key]); }
+            editModal.style.display = 'flex';
+        }
+        function createInput(l, k, v) { const d = document.createElement('div'); d.className = 'form-group'; d.innerHTML = `<label class="form-label">${l}</label><input type="text" class="form-input" data-key="${k}" value="${v}">`; dynamicForm.appendChild(d); }
+        function addNewProperty() { const k = prompt("Key:"); if(k) createInput(k,k,''); }
+        function saveChannelData() {
+            const item = editorData.channelData[currentEditIndex];
+            dynamicForm.querySelectorAll('input').forEach(i => { const k=i.dataset.key, v=i.value.trim(); if(k==='url') item.url=v; else { if(v) item.params[k]=v; else delete item.params[k]; } });
+            updateChannelLines(item); closeEditModal(); renderGrid();
+        }
+        function closeEditModal() { editModal.style.display = 'none'; }
+        function insertTemplate() {
+            const tpl = `\n#EXTINF:-1 tvg-logo="" group-title="new", New Channel\nhttp://url\n`;
+            const ed = document.getElementById('codeEditor');
+            ed.value = ed.value.slice(0, ed.selectionStart) + tpl + ed.value.slice(ed.selectionEnd); parseTextToData();
+        }
+        function saveAndDownload() {
+            if (currentMode!=='text') syncDataToText();
+            const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([document.getElementById('codeEditor').value], {type:"text/plain"}));
+            a.download="Edited_"+editorData.name; a.click();
+        }
+        function resetEditor() { if(confirm('Discard?')) { document.getElementById('step-edit-ui').style.display='none'; document.getElementById('step-upload-editor').style.display='block'; document.getElementById('fileInputEditor').value=''; } }
+    </script>
+</body>
+</html>
